@@ -1,0 +1,7 @@
+language: cpp
+compiler:
+  - gcc
+  - clang
+# TODO
+# script: ./configure && make
+script: echo Do the compilation...
