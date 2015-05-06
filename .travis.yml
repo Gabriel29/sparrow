@@ -1,7 +1,15 @@
 language: cpp
 compiler:
-  - gcc
   - clang
-# TODO
-# script: ./configure && make
-script: echo Do the compilation...
+
+os:
+  - linux
+  # - osx
+
+before_install:
+  - travis/install-deps-${TRAVIS_OS_NAME}.sh
+
+script:
+  - cmake .
+  - make
+  - travis/run-tests.sh
