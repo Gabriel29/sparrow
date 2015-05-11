@@ -1,2 +1,2 @@
 #!/bin/sh
-sudo apt-get install llvm boost flex bison
+sudo apt-get install llvm libboost-dev flex bison
