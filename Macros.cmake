@@ -1,6 +1,6 @@
 
 # General Cmake settings
-CMAKE_MINIMUM_REQUIRED( VERSION 2.8.8 )
+CMAKE_MINIMUM_REQUIRED( VERSION 2.8.7 )
 SET( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )           # allow more human readable "if then else" constructs
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
