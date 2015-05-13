@@ -12,8 +12,6 @@ before_install:
   - sh travis/install-deps-${TRAVIS_OS_NAME}.sh
 
 script:
-  - cd build
-  - cmake ..
-  - make
-  - cd ..
+  - sh travis/build-${TRAVIS_OS_NAME}.sh
+  - cd ${TRAVIS_BUILD_DIR}
   - sh travis/run-tests.sh
