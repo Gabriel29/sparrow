@@ -1,0 +1,121 @@
+import parserIf
+
+fun dumpCode(os: @OutStream, CNodes: NodePtr)
+    // TODO Imports
+    os << "import std.ptr" << endl
+    os << "import std.staticArray" << endl << endl
+
+    dumpImpl.dumpExtDecls(os, CNodes);
+    os << flush;
+
+package dumpImpl
+    var tabs: Int = 0
+    fun printSpaces(os: @OutStream)
+        for i = 0..tabs
+            os << "    " // 4 spaces
+
+    fun dumpExtDecls(os: @OutStream, CNodes: NodePtr)
+        for node: NodePtr = CNodes->children.all()
+            dumpNode(os, node);
+
+    fun isPrimExpr(node: NodePtr): Bool
+        if (  (node->kind == "IntLiteral")
+           || (node->kind == "UIntLiteral")
+           || (node->kind == "LongLiteral")
+           || (node->kind == "ULongLiteral")
+           || (node->kind == "FloatLiteral")
+           || (node->kind == "DoubleLiteral")
+           || (node->kind == "CharLiteral")
+           || (node->kind == "StringLiteral")
+           )
+           return true
+        return false
+
+    fun dumpExpr(os: @OutStream, node: NodePtr)
+        if node isPrimExpr
+            os << node->children.at(0)->kind
+        else if node->kind == "BinOper"
+            dumpExpr(os, node->children.at(0))
+            os << " " << node->name << " " 
+            dumpExpr(os, node->children.at(1))
+
+    fun dumpNode(os: @OutStream, node: NodePtr)
+        if node isNull
+            return
+        else if node->kind == "VarDecl"
+            dumpVarDecl(os, node)
+
+        else if node->kind == "structDecl"
+           dumpStructDecl(os, node) 
+
+        else if node->kind == "FunDecl"
+            dumpFunDecl(os, node)
+
+    fun dumpVarDecl(os: @OutStream, node: NodePtr)
+        printSpaces(os)
+        os << "var " << node->name  << ": "
+        dumpType(os, node->children.at(0))
+        // TODO Storage
+        if node->children.at(2) isSet
+            os << " = "
+            dumpExpr(os, node->children.at(2))
+        os << endl
+
+    fun dumpStructDecl(os: @OutStream, node: NodePtr)
+        printSpaces(os)
+        os << endl
+        os << "datatype " << node->name << endl
+        tabs += 1
+        for c : NodePtr = node->children.all()
+            //dumpNode(os, c)
+            printSpaces(os)
+            os << c->name  << ": "
+            dumpType(os, c->children.at(0))
+            os << endl
+
+        tabs -= 1
+        os << endl
+
+    fun dumpFunDecl(os: @OutStream, node: NodePtr)
+        os << endl
+        os << "[native(\"" << node->name << "\")]" << endl
+        os << "fun " << node->name << "("
+        dumpFuncParams(os, node->children.at(2))
+        os << ")"
+        if node->children.at(0)->name != "Void"
+            os << ": "
+            dumpType(os, node->children.at(0))
+        os << endl
+
+    fun dumpType(os: @OutStream, node: NodePtr)
+        var type: String
+        var type_end: String
+        while true
+            if node isNull
+                break
+            else if node->kind == "PtrType"
+                type += "Ptr("
+                type_end += ")"
+            else if node->kind == "ArrayType"
+                type += "StaticArray("
+                type_end += ")"
+            else if node->kind == "PrimitiveType"
+                if node->name == "Void"
+                    type += "Byte"
+                else
+                    type += node->name
+            else
+                type += node->name
+
+            node = node->children.at(0)
+
+        os << type + type_end
+
+    fun dumpFuncParams(os: @OutStream, node: NodePtr)
+        var first = true
+        for param : NodePtr = node->children.all()
+            if first ; first = false
+            else os <<", "
+            os << param->name
+            os << ": "
+            dumpType(os, param->children.at(0))

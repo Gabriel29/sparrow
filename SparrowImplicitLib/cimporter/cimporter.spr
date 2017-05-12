@@ -1,0 +1,35 @@
+import cImpl.parserIf
+import cImpl.sprCodeDump
+//import cImpl.codeGen
+
+import assert
+import time = time
+
+package meta {
+    import meta.sparrowNodes, meta.featherNodes, meta.compiler
+    import meta.location
+}
+
+//[ct]
+fun handleCode(filename: StringRef, location: meta.Location, context: meta.CompilationContext): meta.AstNode
+    var t: time.Timer
+    var code: StringRef
+    var res : AstNode
+    //var parser: @ParserContext = createParser(filename, code, location)
+    var rootNode : NodePtr //= parser parseHeader
+
+    //genCImporter(rootNode)
+    //res setContext context
+    cout << "Elapsed: " << t.elapsed() << endl << flush
+
+    //parser destroyParser
+    return res
+
+fun generateSparrowFromC(filename, code: StringRef): String
+    var loc: meta.Location = mkLocation()
+    var parser: @ParserContext = createParser(filename, code, loc)
+    var rootNode = parser parseHeader
+    var ss: StringOutputStream
+
+    dumpCode(ss, rootNode)
+    return ss.result;

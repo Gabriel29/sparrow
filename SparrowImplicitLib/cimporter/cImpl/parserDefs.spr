@@ -1,0 +1,14 @@
+import nodes
+import meta.location
+import std.tuple, std.string, std.vector
+
+/// Concept for objects that can report errors produced by scanner
+concept ErrorReporter(x: AnyType) \
+    if isValid(x.reportError(Location(), String()))
+
+/// A string (representing an identifier) and the corresponding location
+datatype LocString = Location*String
+
+/// Vector of LocString objects
+using LocStringVec = LocString Vector
+

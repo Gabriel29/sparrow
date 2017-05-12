@@ -1,0 +1,102 @@
+import os
+import std.ranges
+import std.vector
+import std.newDelete
+
+import cimporter
+import cImpl.parserIf
+import cImpl.nodes
+
+package test {
+    var tabs: Int = 0
+}
+
+fun << (os: @OutStream, n: NodePtr): typeOf(os)
+    if n isNull
+        for i = 0..test.tabs ; os << "\t"
+        os << "-"
+    else if (n->name isEmpty) && (n->children isEmpty)
+        for i = 0..test.tabs ; os << "\t"
+        os << n->kind
+    else
+        for i = 0..test.tabs ; os << "\t"
+        os << n->kind << "(" << endl
+
+        if !(n->name isEmpty)
+            for i = 0..test.tabs + 1 ; os << "\t"
+            os << "\"" << n->name << "\"," << endl
+        
+        if !(n->children isEmpty)
+            test.tabs += 1
+            var first = true
+            for c = n->children.all
+                if first ; first = false
+                else os << ", " << endl
+                os << c
+            test.tabs -= 1
+            os << endl
+
+        for i = 0..test.tabs ; os << "\t"
+        os << ")"
+    return os
+
+fun doScan(filename, code: StringRef)
+    var loc = mkLocation()
+    var parser: @ParserContext = createScanner(filename, code, loc)
+    var token: Token
+    while true
+        nextToken(parser, token)
+        cout << token.type.data << " - '" << token.data << "' - " << token.loc << endl
+        if token.type == tkEND
+            break
+    parser destroyParser
+
+fun doParse(filename, code: StringRef)
+    var loc = mkLocation()
+    var parser: @ParserContext = createParser(filename, code, loc)
+
+    var rootNode = parser parseHeader
+    cout << endl << endl << rootNode << endl
+    parser destroyParser
+
+fun sprMain
+    if programArgs.size() < 2
+        cout << "No input argument" << endl
+        return
+
+    var n = programArgs(1) asInt
+
+    if      n == 0 ; doScan(programArgs(2), "")
+    else if n == 1 ; doParse(programArgs(2), "")
+    else if n == 2 ; testScan()
+    else if n == 3 ; testParse()
+    else if n == 4 ; test1()
+    else if n == 5 ; test2()
+    else if n == 10 ; test1SprDump()
+    else if n == 11 ; test2SprDump()
+
+fun testScan
+    doScan("", "a <= b > b++")
+
+fun testParse
+    doParse("", "
+        void foo(int a);
+        static char c;
+        int **a;
+        struct test { int x; char *y; } my_struct;
+        ")
+
+fun test1
+    doParse("Tests/test1.c", "")
+
+fun test2
+    doParse("Tests/test2.c", "")
+
+fun test1SprDump
+    cout << generateSparrowFromC("Tests/test1.c", "")
+
+fun test2SprDump
+    var loc: meta.Location = mkLocation()
+    var context: meta.CompilationContext
+
+    //handleCode("Tests/test2.c", loc, context)

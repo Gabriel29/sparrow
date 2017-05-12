@@ -1,0 +1,78 @@
+/// Interface between the parser (& scanner) and the Sparrow compiler
+import scanner, parser
+import os, std.newDelete
+
+class ExternalErrorReporter
+    fun reportError(loc: Location, msg: @String)
+        //reportErrorExternal(loc, msg.asStringRef())
+        cout << "ERROR: " << msg.asStringRef() << endl
+        exit(0)
+
+class _CharSource
+    using RetType = Char
+
+    var fileRange: @FileRange
+    var stringRange: StringRef
+
+    fun ctor(fileRange: @FileRange, code: StringRef)
+        this.fileRange := fileRange
+        this.stringRange ctor code
+
+fun isEmpty(this: @_CharSource): Bool = ife(fileRange !== null, fileRange.isEmpty, stringRange.isEmpty)
+
+fun front(this: @_CharSource): Char
+    if ( fileRange !== null ) return fileRange.front
+    else return stringRange.front
+    
+fun popFront(this: @_CharSource)
+    if fileRange !== null
+        fileRange.popFront
+    else stringRange.popFront
+
+
+class ParserContext
+    using _ScannerType = SparrowScanner(_CharSource, ExternalErrorReporter)
+    using _ParserType = SparrowParser(_ScannerType, ExternalErrorReporter)
+
+    var _file: File
+    var _fileRange: FileRange
+    var _source: _CharSource
+    var _scanner: _ScannerType
+    var _parser: _ParserType
+
+    fun ctor(filename, code: StringRef, loc: Location, scannerOnly: Bool = false)
+        var reporter = ExternalErrorReporter()
+
+        if code.isEmpty
+            // Open the file, and create a scanner on top of the file
+            _file ctor filename
+            _fileRange ctor _file.all
+            _source.ctor(_fileRange, "")
+
+            if !_file.isOpen
+                reporter.reportError(loc, toString("Cannot open file: ", filename))
+        else
+            // Use the code as a the input
+            _file ctor
+            _fileRange ctor
+            _source.ctor(null, code)
+
+        _scanner.ctor(_source, reporter, loc)
+        if !scannerOnly
+            _parser.ctor(_scanner, reporter)
+
+
+fun createScanner(filename, code: StringRef, loc: @Location): @ParserContext
+    return new(ParserContext, filename, code, loc, true)
+
+fun createParser(filename, code: StringRef, loc: @Location): @ParserContext
+    return new(ParserContext, filename, code, loc)
+
+fun destroyParser(ctx: @ParserContext)
+    delete(ctx)
+
+fun nextToken(ctx: @ParserContext, outToken: @Token)
+    outToken = (ctx._scanner++)
+
+fun parseHeader(ctx: @ParserContext): NodePtr = ctx._parser parseHeader
+

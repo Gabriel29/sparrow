@@ -1,0 +1,260 @@
+import meta.location
+import std.string
+
+/// A token type; identifies the type of the token
+datatype TokenType = Int
+
+/// The actual token; holds all the information needed for a token
+datatype Token
+    loc: Location
+    type: TokenType
+    data: String
+    intData: ULong
+    floatData: Double
+
+/// Concept modeling the output of the scanner
+/// It's basically a range of tokens
+concept TokenRange(x: Range) if -@(x.RetType) == Token
+
+// The list of all tokens used by the parser/scanner
+using tkEND                 = TokenType(0)
+using tkEOL                 = TokenType(1)
+
+using tkIDENTIFIER          = TokenType(2)
+using tkCONSTANT            = TokenType(3)
+using tkSTRING_LITERAL      = TokenType(4)
+using tkSIZEOF              = TokenType(5)
+
+using tkTYPE_NAME           = TokenType(6)
+
+using tkPTR_OP              = TokenType(10)
+using tkINC_OP              = TokenType(11)
+using tkDEC_OP              = TokenType(12)   
+using tkLEFT_OP             = TokenType(13)
+using tkRIGHT_OP            = TokenType(14)
+using tkLE_OP               = TokenType(15)
+using tkGE_OP               = TokenType(16)
+using tkEQ_OP               = TokenType(17)
+using tkNE_OP               = TokenType(18)
+
+using tkAND_OP              = TokenType(19)
+using tkOR_OP               = TokenType(20)
+using tkMUL_ASSIGN          = TokenType(21)
+using tkDIV_ASSIGN          = TokenType(22)
+using tkMOD_ASSIGN          = TokenType(23)
+using tkADD_ASSIGN          = TokenType(24)
+
+using tkSUB_ASSIGN          = TokenType(25)
+using tkLEFT_ASSIGN         = TokenType(26)
+using tkRIGHT_ASSIGN        = TokenType(27)
+
+using tkAND_ASSIGN          = TokenType(28)
+using tkXOR_ASSIGN          = TokenType(29)
+using tkOR_ASSIGN           = TokenType(30)
+
+using tkTYPEDEF             = TokenType(31)
+using tkEXTERN              = TokenType(32)
+using tkSTATIC              = TokenType(32)
+using tkAUTO                = TokenType(34)
+using tkREGISTER            = TokenType(35)
+
+using tkCHAR                = TokenType(40)
+using tkSHORT               = TokenType(41)
+using tkINT                 = TokenType(42)
+using tkLONG                = TokenType(43)
+using tkSIGNED              = TokenType(44)
+using tkUNSIGNED            = TokenType(45)
+using tkFLOAT               = TokenType(46)
+using tkDOUBLE              = TokenType(47)
+using tkCONST               = TokenType(48)
+using tkVOLATILE            = TokenType(49)
+using tkVOID                = TokenType(67)
+
+using tkSTRUCT              = TokenType(50)
+using tkUNION               = TokenType(51)
+using tkENUM                = TokenType(52)
+using tkELLIPSIS            = TokenType(53)
+
+using tkCASE                = TokenType(54)
+using tkDEFAULT             = TokenType(55)
+using tkIF                  = TokenType(56)
+using tkELSE                = TokenType(57)
+using tkSWITCH              = TokenType(58)
+using tkWHILE               = TokenType(59)
+using tkDO                  = TokenType(60)
+using tkFOR                 = TokenType(61)
+using tkGOTO                = TokenType(62)
+using tkCONTINUE            = TokenType(63)
+using tkBREAK               = TokenType(64)
+using tkRETURN              = TokenType(65)
+
+using tkSEMICOLON           = TokenType(68)
+using tkLCURLY              = TokenType(69)
+using tkRCURLY              = TokenType(70)
+using tkCOMMA               = TokenType(71)
+using tkCOLON               = TokenType(72)
+using tkEQUAL               = TokenType(73)
+using tkLPAREN              = TokenType(74)
+using tkRPAREN              = TokenType(75)
+using tkLBRACKET            = TokenType(76)
+using tkRBRACKET            = TokenType(77)
+using tkDOT                 = TokenType(78)
+using tkAMPERSAND           = TokenType(79)
+using tkNOT                 = TokenType(80)
+using tkTILDA               = TokenType(81)
+using tkMINUS               = TokenType(82)
+using tkPLUS                = TokenType(83)
+using tkMUL                 = TokenType(84)
+using tkDIV                 = TokenType(85)
+using tkMOD                 = TokenType(86)
+using tkLT                  = TokenType(87)
+using tkGT                  = TokenType(88)
+using tkXOR                 = TokenType(89)
+using tkOR                  = TokenType(90)
+using tkQMARK               = TokenType(91)
+
+using tkCHAR_LITERAL        = TokenType(200)
+using tkINT_LITERAL         = TokenType(201)
+using tkUINT_LITERAL        = TokenType(202)
+using tkFLOAT_LITERAL       = TokenType(203)
+using tkUFLOAT_LITERAL      = TokenType(204)
+using tkDOUBLE_LITERAL      = TokenType(205)
+
+
+// C Preprocessor tokens
+/*
+using ptkDEFINE             = TokenType(100)
+using ptkINCLUDE            = TokenType(101)
+using ptkUNDEF              = TokenType(102)
+using ptkIFDEF              = TokenType(103)
+using ptkIFNDEF             = TokenType(104)
+using ptkIF                 = TokenType(105)
+using ptkELSE               = TokenType(106)
+using ptkELIF               = TokenType(107)
+using ptkENDIF              = TokenType(108)
+using ptkERROR              = TokenType(109)
+using ptkPRAGMA             = TokenType(110)
+*/
+
+fun _asString(t: TokenType): String
+    if t == tkEND                   return "end-of-file"
+    else if t == tkEOL              return "new-line"
+    else if t == tkIDENTIFIER       return "identifier"
+    else if t == tkCONSTANT         return "constant"
+    else if t == tkSTRING_LITERAL   return "string"
+    else if t == tkSIZEOF           return "'sizeof'"
+
+    else if t == tkTYPE_NAME        return "type_name"
+
+    else if t == tkPTR_OP           return "'->'"
+    else if t == tkINC_OP           return "'++'"
+    else if t == tkDEC_OP           return "'--'"
+    else if t == tkLEFT_OP          return "'<<'"
+    else if t == tkRIGHT_OP         return "'>>'"
+    else if t == tkLE_OP            return "'<='"
+    else if t == tkGE_OP            return "'>='"
+    else if t == tkEQ_OP            return "'=='"
+    else if t == tkNE_OP            return "'!='"
+
+    else if t == tkAND_OP           return "'&&'"
+    else if t == tkOR_OP            return "'||'"
+    else if t == tkMUL_ASSIGN       return "'*='"
+    else if t == tkDIV_ASSIGN       return "'/='"
+    else if t == tkMOD_ASSIGN       return "'%='"
+    else if t == tkADD_ASSIGN       return "'+='"
+
+    else if t == tkSUB_ASSIGN       return "'-='"
+    else if t == tkLEFT_ASSIGN      return "'<=='"
+    else if t == tkRIGHT_ASSIGN     return "'>=='"
+
+    else if t == tkAND_ASSIGN       return "'&='"
+    else if t == tkXOR_ASSIGN       return "'^='"
+    else if t == tkOR_ASSIGN        return "'|='"
+
+    else if t == tkTYPEDEF          return "'typedef'"
+    else if t == tkEXTERN           return "'extern'"
+    else if t == tkSTATIC           return "'static'"
+    else if t == tkAUTO             return "'auto'"
+    else if t == tkREGISTER         return "'register'"
+
+    else if t == tkCHAR             return "'char'"
+    else if t == tkSHORT            return "'short'"
+    else if t == tkINT              return "'int'"
+    else if t == tkLONG             return "'long'"
+    else if t == tkSIGNED           return "'signed'"
+    else if t == tkUNSIGNED         return "'unsigned'"
+    else if t == tkFLOAT            return "'float'"
+    else if t == tkDOUBLE           return "'double'"
+    else if t == tkCONST            return "'const'"
+    else if t == tkVOLATILE         return "'volatile'"
+    else if t == tkVOID             return "'void'"
+    
+    else if t == tkSTRUCT           return "'struct'"
+    else if t == tkUNION            return "'union'"
+    else if t == tkENUM             return "'enum'"
+    else if t == tkELLIPSIS         return "'...'"
+    
+    else if t == tkCASE             return "'case'"
+    else if t == tkDEFAULT          return "'default'"
+    else if t == tkIF               return "'if'"
+    else if t == tkELSE             return "'else'"
+    else if t == tkSWITCH           return "'switch'"
+    else if t == tkWHILE            return "'while'"
+    else if t == tkDO               return "'do'"
+    else if t == tkFOR              return "'for'"
+    else if t == tkGOTO             return "'goto'"
+    else if t == tkCONTINUE         return "'continue'"
+    else if t == tkBREAK            return "'break'"
+    else if t == tkRETURN           return "'return'"
+
+    else if t == tkSEMICOLON        return "';'"
+    else if t == tkLCURLY           return "'{'"
+    else if t == tkRCURLY           return "'}'"
+    else if t == tkCOMMA            return "','"
+    else if t == tkCOLON            return "':'"
+    else if t == tkEQUAL            return "'='"
+    else if t == tkLPAREN           return "'('"
+    else if t == tkRPAREN           return "')'"
+    else if t == tkLBRACKET         return "'['"
+    else if t == tkRBRACKET         return "']'"
+    else if t == tkDOT              return "'.'"
+    else if t == tkAMPERSAND        return "'&'"
+    else if t == tkNOT              return "'!'"
+    else if t == tkTILDA            return "'~'"
+    else if t == tkMINUS            return "'-'"
+    else if t == tkPLUS             return "'+'"
+    else if t == tkMUL              return "'*'"
+    else if t == tkDIV              return "'/'"
+    else if t == tkMOD              return "'%'"
+    else if t == tkLT               return "'<'"
+    else if t == tkGT               return "'>'"
+    else if t == tkXOR              return "'^'"
+    else if t == tkOR               return "'|'"
+    else if t == tkQMARK            return "'?'"
+
+    else if t == tkCHAR_LITERAL     return "char literal"
+    else if t == tkINT_LITERAL      return "int literal"
+    else if t == tkUINT_LITERAL     return "uint literal"
+
+    else if t == tkFLOAT_LITERAL     return "float literal"
+    else if t == tkUFLOAT_LITERAL    return "ufloat literal"
+
+    else if t == tkDOUBLE_LITERAL    return "double literal"
+
+
+    // C Preprocessor tokens
+    /*
+    else if t == ptkDEFINE          return "'define'"
+    else if t == ptkINCLUDE         return "'include'"
+    else if t == ptkUNDEF           return "'undef'"
+    else if t == ptkIFDEF           return "'ifdef'"
+    else if t == ptkIFNDEF          return "'if'"
+    else if t == ptkIF              return "'else'"
+    else if t == ptkELSE            return "'elif'"
+    else if t == ptkELIF            return "'endif'"
+    else if t == ptkERROR           return "'error'"
+    else if t == ptkPRAGMA          return "'pragma'"
+    */
+
+fun >>(t: TokenType, os: @OutStream)
+    os << (t _asString)
