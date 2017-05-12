@@ -1,6 +1,6 @@
 import cImpl.parserIf
 import cImpl.sprCodeDump
-//import cImpl.codeGen
+import cImpl.codeGen
 
 import assert
 import time = time
@@ -10,19 +10,19 @@ package meta {
     import meta.location
 }
 
-//[ct]
+[ct]
 fun handleCode(filename: StringRef, location: meta.Location, context: meta.CompilationContext): meta.AstNode
     var t: time.Timer
     var code: StringRef
     var res : AstNode
-    //var parser: @ParserContext = createParser(filename, code, location)
-    var rootNode : NodePtr //= parser parseHeader
+    var parser: @ParserContext = createParser(filename, code, location)
+    //var rootNode : NodePtr = parser parseHeader
 
     //genCImporter(rootNode)
     //res setContext context
     cout << "Elapsed: " << t.elapsed() << endl << flush
 
-    //parser destroyParser
+    parser destroyParser
     return res
 
 fun generateSparrowFromC(filename, code: StringRef): String

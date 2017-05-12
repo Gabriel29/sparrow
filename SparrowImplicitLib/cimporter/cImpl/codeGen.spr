@@ -7,7 +7,7 @@ package meta
     import meta.compiler
 
 [ct]
-fun genCImporter(rootNode: @Node): meta.AstNode
+fun genCImporter(rootNode: NodePtr): meta.AstNode
     return Impl.genCImpSystem(rootNode)
 
 package Impl
@@ -15,49 +15,49 @@ package Impl
     var nullNode: meta.AstNode
 
     [ct]
-    fun genCImpSystem(rootNode: @Node): meta.AstNode
+    fun genCImpSystem(rootNode: NodePtr): meta.AstNode
         var loc: Location
         var resNodes: Vector(meta.AstNode)
 
-        // TODO - Find a way to check for ptr/arrays in AST
+        //TODO - Find a way to check for ptr/arrays in AST
         resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std.ptr"), nullNode, "")
         resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std.staticArray"), nullNode, "")
 
-        for node: @Node = rootNode.children.all()
-            genNode(node, resNodes)
+        //TODO
+        if rootNode isSet
+            for node: NodePtr = rootNode->children.all()
+                genNode(node, resNodes)
 
         return meta.mkNodeList(loc, resNodes.all)
 
     [ct]
-    fun genNode(node: @Node, resNodes: @Vector(meta.AstNode))
-        if node.kind == "VarDecl"
+    fun genNode(node: NodePtr, resNodes: @Vector(meta.AstNode))
+        if node->kind == "VarDecl"
             genVarDecl(node)
-        else if node.kind == "FunDecl"
+        else if node->kind == "FunDecl"
             genFunDecl(node)
         //else if node.kind == "StructDecl"
-        //
 
     [ct]
-    fun genVarDecl(node: @Node): meta.AstNode
+    fun genVarDecl(node: NodePtr): meta.AstNode
         var varDecl: meta.AstNode
         var init = nullNode
         var type = nullNode
 
-        varDecl = meta.mkSprVariable(node.loc, node.name.asStringRef, type, init)
+        varDecl = meta.mkSprVariable(node->loc, node->name asStringRef, type, init)
         return varDecl
 
     [ct]
-    fun genType(node: @Node): meta.AstNode
+    fun genType(node: NodePtr): meta.AstNode
         var type: meta.AstNode
-        
-        type = meta.mkIdentifier(node.loc, node.name.asStringRef)
+        type = meta.mkIdentifier(node->loc, node->name asStringRef)
 
         return type
 
     [ct]
-    fun genFunDecl(node: @Node): meta.AstNode
-        var loc = node.loc
-        var name = node.name.asStringRef
+    fun genFunDecl(node: NodePtr): meta.AstNode
+        var loc = node->loc
+        var name = node->name asStringRef
         var paramsNode = genFuncParams(node)
         var body = nullNode
         var funDecl = meta.mkSprFunction(loc, name, paramsNode, nullNode, body, nullNode);
@@ -65,27 +65,27 @@ package Impl
         return funDecl
 
     [ct]
-    fun genFuncParams(node: @Node): meta.AstNode
-        var locParams = node.children.at(0).loc
+    fun genFuncParams(node: NodePtr): meta.AstNode
+        var locParams = node->children.at(0)->loc
         var params = meta.mkNodeList(locParams, meta.AstNodeRange(), true)
-        for param : @Node = node.children.all()
-            var loc = param.loc
-            var name = param.name.asStringRef()
-            var type = genType(param.children.at(0))
+        for param : NodePtr = node->children.all()
+            var loc = param->loc
+            var name = param->name asStringRef
+            var type = genType(param->children.at(0))
             params = meta.addToNodeList(params, meta.mkSprParameter(loc, name, type, nullNode))
 
         return params
 
     [ct]
-    fun genStructDecl(node: @Node): meta.AstNode
-        var name = node.name.asStringRef
-        var loc = node.loc
+    fun genStructDecl(node: NodePtr): meta.AstNode
+        var name = node->name asStringRef
+        var loc = node->loc
         var formals = meta.mkNodeList(loc, meta.AstNodeRange(), true)
 
-        for formal : @Node = node.children.all()
-            var loc = formal.loc
-            var name = formal.name.asStringRef()
-            var type = genType(formal.children.at(0))
+        for formal : NodePtr = node->children.all()
+            var loc = formal->loc
+            var name = formal->name asStringRef
+            var type = genType(formal->children.at(0))
             formals = meta.addToNodeList(formals, meta.mkSprParameter(loc, name, type, nullNode))
 
         return meta.mkSprClass(loc, name, formals, nullNode, nullNode, nullNode)

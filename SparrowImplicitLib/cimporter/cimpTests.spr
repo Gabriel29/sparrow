@@ -95,8 +95,9 @@ fun test2
 fun test1SprDump
     cout << generateSparrowFromC("Tests/test1.c", "")
 
+[ct]
 fun test2SprDump
     var loc: meta.Location = mkLocation()
     var context: meta.CompilationContext
-
-    //handleCode("Tests/test2.c", loc, context)
+    //TODO
+    handleCode("/mnt/d/Sparrow/sparrow/SparrowImplicitLib/cimporter/Tests/test1.c", loc, context)

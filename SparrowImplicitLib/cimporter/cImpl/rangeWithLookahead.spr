@@ -7,6 +7,7 @@ import std.ranges
 ///
 /// This will hold an internal buffer of elements from the given range
 /// If there are not enough items in the source range we give back the default-constructed element
+[rtct]
 class RangeWithLookahead(baseRangeType: Type) if Range(#$baseRangeType)
     using RetType = -@(baseRangeType.RetType)
 
@@ -22,14 +23,17 @@ class RangeWithLookahead(baseRangeType: Type) if Range(#$baseRangeType)
         if !!source
             buffer += (source++)
             
+[rtct]       
 fun isEmpty(this: @RangeWithLookahead): Bool = buffer.isEmpty
+[rtct]
 fun front(this: @RangeWithLookahead): RetType = buffer.front
+[rtct]
 fun popFront(this: @RangeWithLookahead)
     buffer remove 0
     // Add a new element in the buffer if the buffer is empty
     if (buffer.isEmpty) && !!source
         buffer += (source++)
-
+[rtct]
 fun peek(this: @RangeWithLookahead, n: UInt): RetType
     // If not enough elements in the buffer, add them now
     while n >= buffer.size && !!source
@@ -38,7 +42,7 @@ fun peek(this: @RangeWithLookahead, n: UInt): RetType
         return buffer(n)
     else
         return RetType() // not enough elements in the source
-
+[rtct]
 fun hasLessThan(this: @RangeWithLookahead, n: UInt): Bool
     // Try to fill the buffer with the amount of elements
     while n >= buffer.size && !!source

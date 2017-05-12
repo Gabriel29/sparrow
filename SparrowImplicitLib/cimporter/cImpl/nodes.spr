@@ -6,8 +6,24 @@ import std.string
 import std.ptr
 import meta.location
 
+[rtct]
+class OneNodeRange
+    var _value: NodePtr
+    var _empty: Bool
+
+    using RetType = Ptr(Node)
+
+    fun isEmpty                     = _empty
+    fun front: RetType              = _value
+    fun popFront                    { _empty = true }
+    
+    fun ctor(value: NodePtr)
+        _value ctor value
+        _empty = false
+
 using NodePtr = Ptr(Node)
 
+[rtct]
 class Node
     var kind: String
     var loc: Location
@@ -17,13 +33,13 @@ class Node
     fun ctor(l: Location, kind: StringRef)
         this.kind ctor kind
         this.loc ctor l
-        cout << "Parsed: " << kind << endl
+        //cout << "Parsed: " << kind << endl
         
     fun ctor(l: Location, kind: StringRef, r: Range)
         this.kind ctor kind
         this.loc ctor l
         children ctor r
-        cout << "Parsed: " << kind << endl
+        //cout << "Parsed: " << kind << endl
 
     fun ctor(l: Location, kind: StringRef, r: Range, name: StringRef)
         this.kind ctor kind
@@ -36,64 +52,65 @@ class Node
         this.kind ctor kind
         this.loc ctor l
         this.name ctor name
-        cout << "Parsed: " << kind << endl
+        //cout << "Parsed: " << kind << endl
 
-fun createNode(l: Location, kind: StringRef): NodePtr = new(Node, l, kind)
-fun createNode(l: Location, kind: StringRef, children: Range): NodePtr = new(Node, l, kind, children)
-fun createNode(l: Location, kind: StringRef, children: Range, name: StringRef): NodePtr = new(Node, l, kind, children, name)
-fun createNode(l: Location, kind: StringRef, name: StringRef): NodePtr = new(Node, l, kind, name)
+[rtct]
+    fun createNode(l: Location, kind: StringRef): NodePtr = new(Node, l, kind)
+    fun createNode(l: Location, kind: StringRef, children: Range): NodePtr = new(Node, l, kind, children)
+    fun createNode(l: Location, kind: StringRef, children: Range, name: StringRef): NodePtr = new(Node, l, kind, children, name)
+    fun createNode(l: Location, kind: StringRef, name: StringRef): NodePtr = new(Node, l, kind, name)
 
-fun mkType(loc: @Location, declType, type: StringRef, modifier: NodePtr) \
-    = createNode(loc, declType, repeat(modifier, 1), type)
-fun mkArrayType(loc: @Location, node, size: NodePtr) \
-    = createNode(loc, "ArrayType", values(node, size))
-fun mkPtrType(loc: @Location, node, storage: NodePtr) \
-    = createNode(loc, "PtrType", values(node, storage))
-fun mkFunDecl(loc: @Location, name: StringRef, retType, storage, params, body: NodePtr) \
-    = createNode(loc, "FunDecl", values(retType, storage, params, body), name)
-fun mkStructDecl(loc: @Location, type, name: StringRef) \
-    = createNode(loc, type, name)
-fun mkVarDecl(loc: @Location, name: StringRef, type, storage, init: NodePtr) \
-    = createNode(loc, "VarDecl", values(type, storage, init), name)
-fun mkExtDecls() \
-    = createNode(Location(), "nodeList")
-fun mkIdentifier(loc: @Location, id: StringRef) \
-    = createNode(loc, id)
-fun mkBinOper(loc: @Location, expr1, expr2: NodePtr, name: StringRef) \
-    = createNode(loc, "BinOper", values(expr1, expr2), name)
-fun mkCast(loc: @Location, type, expr: NodePtr) \
-    = createNode(loc, "Cast", values(type, expr))
-fun mkUnaryExpr(loc: @Location, expr: NodePtr, op: StringRef) \
-    = createNode(loc, "Unary", repeat(expr, 1), op)
+    fun mkType(loc: @Location, declType, type: StringRef, modifier: NodePtr) \
+        = createNode(loc, declType, OneNodeRange(modifier), type)
+    fun mkArrayType(loc: @Location, node, size: NodePtr) \
+        = createNode(loc, "ArrayType", values(node, size))
+    fun mkPtrType(loc: @Location, node, storage: NodePtr) \
+        = createNode(loc, "PtrType", values(node, storage))
+    fun mkFunDecl(loc: @Location, name: StringRef, retType, storage, params, body: NodePtr) \
+        = createNode(loc, "FunDecl", values(retType, storage, params, body), name)
+    fun mkStructDecl(loc: @Location, type, name: StringRef) \
+        = createNode(loc, type, name)
+    fun mkVarDecl(loc: @Location, name: StringRef, type, storage, init: NodePtr) \
+        = createNode(loc, "VarDecl", values(type, storage, init), name)
+    fun mkExtDecls() \
+        = createNode(Location(), "nodeList")
+    fun mkIdentifier(loc: @Location, id: StringRef) \
+        = createNode(loc, id)
+    fun mkBinOper(loc: @Location, expr1, expr2: NodePtr, name: StringRef) \
+        = createNode(loc, "BinOper", values(expr1, expr2), name)
+    fun mkCast(loc: @Location, type, expr: NodePtr) \
+        = createNode(loc, "Cast", values(type, expr))
+    fun mkUnaryExpr(loc: @Location, expr: NodePtr, op: StringRef) \
+        = createNode(loc, "Unary", OneNodeRange(expr), op)
 
-fun mkIntLiteral(loc: @Location, val: ULong) \
-    = createNode(loc, "IntLiteral", repeat(mkIdentifier(loc, toString(val) asStringRef), 1))
-fun mkUIntLiteral(loc: @Location, val: ULong) \
-    = createNode(loc, "UIntLiteral", repeat(mkIdentifier(loc, toString(val) asStringRef), 1))
-fun mkLongLiteral(loc: @Location, val: ULong) \
-    = createNode(loc, "LongLiteral", repeat(mkIdentifier(loc, toString(val) asStringRef), 1))
-fun mkULongLiteral(loc: @Location, val: ULong) \
-    = createNode(loc, "ULongLiteral", repeat(mkIdentifier(loc, toString(val) asStringRef), 1))
-fun mkFloatLiteral(loc: @Location, val: Double) \
-    = createNode(loc, "FloatLiteral", repeat(mkIdentifier(loc, toString(val) asStringRef), 1))
-fun mkDoubleLiteral(loc: @Location, val: Double) \
-    = createNode(loc, "DoubleLiteral", repeat(mkIdentifier(loc, toString(val) asStringRef), 1))
-fun mkCharLiteral(loc: @Location, data: StringRef) \
-    = createNode(loc, "CharLiteral", repeat(mkIdentifier(loc, data), 1))
-fun mkStringLiteral(loc: @Location, data: StringRef) \
-    = createNode(loc, "StringLiteral", repeat(mkIdentifier(loc, data), 1))
+    fun mkIntLiteral(loc: @Location, val: ULong) \
+        = createNode(loc, "IntLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
+    fun mkUIntLiteral(loc: @Location, val: ULong) \
+        = createNode(loc, "UIntLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
+    fun mkLongLiteral(loc: @Location, val: ULong) \
+        = createNode(loc, "LongLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
+    fun mkULongLiteral(loc: @Location, val: ULong) \
+        = createNode(loc, "ULongLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
+    fun mkFloatLiteral(loc: @Location, val: Double) \
+        = createNode(loc, "FloatLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
+    fun mkDoubleLiteral(loc: @Location, val: Double) \
+        = createNode(loc, "DoubleLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
+    fun mkCharLiteral(loc: @Location, data: StringRef) \
+        = createNode(loc, "CharLiteral", OneNodeRange(mkIdentifier(loc, data)))
+    fun mkStringLiteral(loc: @Location, data: StringRef) \
+        = createNode(loc, "StringLiteral", OneNodeRange(mkIdentifier(loc, data)))
 
-fun mkType(loc: @Location, type: StringRef, node: NodePtr) \
-    = createNode(loc, type, repeat(node, 1))
+    fun mkType(loc: @Location, type: StringRef, node: NodePtr) \
+        = createNode(loc, type, OneNodeRange(node))
 
-fun mkEmpty(loc: @Location) \
-    = createNode(loc, "Empty")
+    fun mkEmpty(loc: @Location) \
+        = createNode(loc, "Empty")
 
-fun addToNodeList(nl, newNode: NodePtr): NodePtr
-    if nl isNull
-        nl = createNode(newNode->loc, "nodeList", repeat(newNode, 1))
-    else
-        nl->children += newNode
+    fun addToNodeList(nl, newNode: NodePtr): NodePtr
+        if nl isNull
+            nl = createNode(newNode->loc, "nodeList", OneNodeRange(newNode))
+        else
+            nl->children += newNode
 
-    return nl
+        return nl
 

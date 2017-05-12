@@ -9,31 +9,33 @@ import os = os
 concept CharRange(x: Range) if -@(x.RetType) == Char
 
 package _ImplLSCR
-    /// Helper class used to sync the location with the source range
-    ///
-    /// This also exposes a CharRange functionality, but it also modifiers an external
-    /// location when iterating over the chars
-    [initCtor]
-    class LocationSyncCharRange(sourceType: Type) if CharRange(#$sourceType)
-        using RetType = Char
+    [rtct]
+        /// Helper class used to sync the location with the source range
+        ///
+        /// This also exposes a CharRange functionality, but it also modifiers an external
+        /// location when iterating over the chars
+        [initCtor]
+        class LocationSyncCharRange(sourceType: Type) if CharRange(#$sourceType)
+            using RetType = Char
 
-        var source: sourceType
-        var loc: @Location
+            var source: sourceType
+            var loc: @Location
 
-    fun isEmpty(this: @LocationSyncCharRange) = source.isEmpty
-    fun front(this: @LocationSyncCharRange)   = source.front
-    fun popFront(this: @LocationSyncCharRange)
-        if *source == '\n'.char
-            loc addLines 1
-        else
-            loc addColumns 1
-        source.popFront
+        fun isEmpty(this: @LocationSyncCharRange) = source.isEmpty
+        fun front(this: @LocationSyncCharRange)   = source.front
+        fun popFront(this: @LocationSyncCharRange)
+            if *source == '\n'.char
+                loc addLines 1
+            else
+                loc addColumns 1
+            source.popFront
 
 /// Our main scanner
 ///
 /// This behaves just like a range transformation. Given the source range, this
 /// will represent a range of tokens extracted from the source characters.
 ///
+[rtct]
 class SparrowScanner(sourceType, errorReporterType: Type) \
         if CharRange(#$sourceType) && ErrorReporter(#$errorReporterType)
     using RetType = Token
@@ -60,13 +62,17 @@ class SparrowScanner(sourceType, errorReporterType: Type) \
     /// Object used to report errors
     var _errorReporter: errorReporterType
     
-
+[rtct]
 fun isEmpty(this: @SparrowScanner) = _atEnd
+
+[rtct]
 fun front(this: @SparrowScanner): Token
     if !_tokenIsComputed
         _tokenIsComputed = true
         this.popFront
     return _curToken
+
+[rtct]
 fun popFront(this: @SparrowScanner)
     if (_src.isEmpty) && _curToken.type == tkEND
         _atEnd = true
@@ -76,391 +82,392 @@ fun popFront(this: @SparrowScanner)
         // cout << _curToken.loc << ": token: " << _curToken.type._data << " - '" << _curToken.data << "'" << endl
 
 package _Impl
+    [rtct]
+        fun reportError(this: @SparrowScanner, msg: StringRef)
+            _errorReporter.reportError(_src.loc, msg)
 
-    fun reportError(this: @SparrowScanner, msg: @String)
-        _errorReporter.reportError(_src.loc, msg)
+        /// Peeks at the next char; we assume that at least the cur char is valid
+        /// Returns Char(0) if no next char is available
+        fun peekChar(this: @SparrowScanner): Char
+            return _src.source peek 1
 
-    /// Peeks at the next char; we assume that at least the cur char is valid
-    /// Returns Char(0) if no next char is available
-    fun peekChar(this: @SparrowScanner): Char
-        return _src.source peek 1
+        fun peekChar(this: @SparrowScanner, n: UInt): Char
+            return _src.source peek n
 
-    fun peekChar(this: @SparrowScanner, n: UInt): Char
-        return _src.source peek n
+        /// Check if the source to has less than the given number of characters
+        fun hasLessThan(this: @SparrowScanner, n: UInt): Bool
+            return _src.source hasLessThan n
 
-    /// Check if the source to has less than the given number of characters
-    fun hasLessThan(this: @SparrowScanner, n: UInt): Bool
-        return _src.source hasLessThan n
+        /// Advances the input stream while the predicate matches
+        /// Captures every character that matches
+        fun advanceAndCapture(this: @SparrowScanner, pred: AnyType)
+            while !!_src && pred(*_src) ; _src.popFront
+                _curToken.data += *_src
 
-    /// Advances the input stream while the predicate matches
-    /// Captures every character that matches
-    fun advanceAndCapture(this: @SparrowScanner, pred: AnyType)
-        while !!_src && pred(*_src) ; _src.popFront
+        /// Advances and captures 1 char
+        fun advanceAndCapture1(this: @SparrowScanner)
             _curToken.data += *_src
+            _src.popFront
 
-    /// Advances and captures 1 char
-    fun advanceAndCapture1(this: @SparrowScanner)
-        _curToken.data += *_src
-        _src.popFront
+        /// Computes the next token, for the current characters in the source stream.
+        /// Stores the token in _curToken
+        fun nextToken(this: @SparrowScanner): TokenType
+            var loc: @Location = _src.loc
 
-    /// Computes the next token, for the current characters in the source stream.
-    /// Stores the token in _curToken
-    fun nextToken(this: @SparrowScanner): TokenType
-        var loc: @Location = _src.loc
+            while true
+                // The current location starts where the last one ended
+                loc stepOver
+                _curToken.data clear
 
-        while true
-            // The current location starts where the last one ended
-            loc stepOver
-            _curToken.data clear
+                // First check if the source is empty; if so, return an EOF token
+                if _src.isEmpty
+                    return tkEND
 
-            // First check if the source is empty; if so, return an EOF token
-            if _src.isEmpty
+                // Get the first character in the source
+                var ch = *_src
+                var ch2 = this peekChar
+                var ch3 = this peekChar 2
+
+                // Check for whitespace -- drop all the whitespace
+                if ch == ' '.char
+                    _src advanceIf (fun c = c==' '.char)
+                    continue
+
+                // Check for tabs -- drop all the tabs
+                if ch == '\t'.char
+                    _src advanceIf (fun c = c=='\t'.char)
+                    continue
+
+                // Check for new lines
+                if ch == '\n'.char
+                    _src.popFront
+                    // return tkEOL
+                    continue
+
+                // Check for line comments -- drop everything until the end of line (including eol)
+                if ch == '/'.char && ch2 == '/'.char
+                    _src.popFront
+                    _src advanceIf (fun c = c!='\n'.char)
+                    continue
+
+                // Check for multi-line comments -- drop them
+                if ch == '/'.char && ch2 == '*'.char
+                    _src advance 2
+                    var c1 = 'a'.char
+                    var c2 = 'a'.char
+                    while !!_src && (c1 != "*".char || c2 != "/".char)
+                        c1 = c2
+                        c2 = ++_src
+                    if !_src
+                        this reportError "End of file found inside comment"
+                        return tkEND
+                    _src.popFront     // move past '/'
+                    continue
+
+                // Backslash followed by a new-line collapses
+                if ch == '\\'.char && ch2 == '\n'.char
+                    _src advance 2
+                    continue
+
+                // Strings
+                if ch == '"'.char                   return parseString(this, '"'.char)
+                if ch == '\''.char                  return parseChar(this, "\'".char)
+
+                ///////////////////////////////// LUCTEO /////////////////////////////
+                // if ch == '<'.char && ch2 == '{'.char  return parseStringNE(this)
+                //////////////////////////////////////////////////////////////////////
+
+                // Symbols
+                if ch == ';'.char  { _src.popFront; return tkSEMICOLON; }
+                if ch == ','.char  { _src.popFront; return tkCOMMA; }
+                if ch == '{'.char  { _src.popFront; return tkLCURLY; }
+                if ch == '}'.char  { _src.popFront; return tkRCURLY; }
+                if ch == '['.char  { _src.popFront; return tkLBRACKET; }
+                if ch == ']'.char  { _src.popFront; return tkRBRACKET; }
+                if ch == '('.char  { _src.popFront; return tkLPAREN; }
+                if ch == ')'.char  { _src.popFront; return tkRPAREN; }
+
+                // These two symbols can also be part of operators
+                // if ch == ':'.char && !isOpChar(this peekChar) { _src.popFront; return tkCOLON; }
+                // if ch == '='.char && !isOpChar(this peekChar) { _src.popFront; return tkEQUAL; }
+
+                // Is this an operator?
+                if isOpChar(ch)
+                    return parseOperator(this)
+
+                // Check for dot -- dot followed by a digit is a floating point constant
+                //if ch == '.'.char && !isDigit(ch2) { _src.popFront; return tkDOT; }
+                /////////////////////////////////////////////////////////////////////////
+
+                // Identifiers
+                if isAlpha(ch) || ch == '_'.char return parseIdentifer(this)
+
+                // Numeric literals
+                if isDigit(ch) || ch == '.'.char return parseNumeric(this)
+
+                //TODO
+                //this reportError toString("Invalid character found: '", ch, "' (", Int(ch), ')'.char)
+                _src.popFront
                 return tkEND
 
-            // Get the first character in the source
+        fun isOpChar(c: Char): Bool
+            return (
+                   c == '!'.char || c == '%'.char || c == '<'.char
+                || c == '^'.char || c == '&'.char || c == '-'.char
+                || c == '+'.char || c == '='.char || c == '|'.char
+                || c == '>'.char || c == '/'.char
+                || c == '*'.char || c == '.'.char 
+                )
+
+        // fun isOpCharDot(c: Char) = c == '.'.char || isOpChar(c)
+        //this advanceAndCapture \isOpCharDot
+
+        [native("tolower")]
+        fun tolower(c: Int): Int
+        fun toLower(c: Char) = Char(tolower(Int(c)))
+
+
+        // TODO - Add tkDOT
+        /// Parse an operator and Return the coresponding Token
+        fun parseOperator(this: @SparrowScanner): TokenType
             var ch = *_src
             var ch2 = this peekChar
             var ch3 = this peekChar 2
 
-            // Check for whitespace -- drop all the whitespace
-            if ch == ' '.char
-                _src advanceIf (fun c = c==' '.char)
-                continue
-
-            // Check for tabs -- drop all the tabs
-            if ch == '\t'.char
-                _src advanceIf (fun c = c=='\t'.char)
-                continue
-
-            // Check for new lines
-            if ch == '\n'.char
-                _src.popFront
-                // return tkEOL
-                continue
-
-            // Check for line comments -- drop everything until the end of line (including eol)
-            if ch == '/'.char && ch2 == '/'.char
-                _src.popFront
-                _src advanceIf (fun c = c!='\n'.char)
-                continue
-
-            // Check for multi-line comments -- drop them
-            if ch == '/'.char && ch2 == '*'.char
-                _src advance 2
-                var c1 = 'a'.char
-                var c2 = 'a'.char
-                while !!_src && (c1 != "*".char || c2 != "/".char)
-                    c1 = c2
-                    c2 = ++_src
-                if !_src
-                    this reportError "End of file found inside comment"
-                    return tkEND
-                _src.popFront     // move past '/'
-                continue
-
-            // Backslash followed by a new-line collapses
-            if ch == '\\'.char && ch2 == '\n'.char
-                _src advance 2
-                continue
-
-            // Strings
-            if ch == '"'.char                   return parseString(this, '"'.char)
-            if ch == '\''.char                  return parseChar(this, "\'".char)
-
-            ///////////////////////////////// LUCTEO /////////////////////////////
-            // if ch == '<'.char && ch2 == '{'.char  return parseStringNE(this)
-            //////////////////////////////////////////////////////////////////////
-
-            // Symbols
-            if ch == ';'.char  { _src.popFront; return tkSEMICOLON; }
-            if ch == ','.char  { _src.popFront; return tkCOMMA; }
-            if ch == '{'.char  { _src.popFront; return tkLCURLY; }
-            if ch == '}'.char  { _src.popFront; return tkRCURLY; }
-            if ch == '['.char  { _src.popFront; return tkLBRACKET; }
-            if ch == ']'.char  { _src.popFront; return tkRBRACKET; }
-            if ch == '('.char  { _src.popFront; return tkLPAREN; }
-            if ch == ')'.char  { _src.popFront; return tkRPAREN; }
-
-            // These two symbols can also be part of operators
-            // if ch == ':'.char && !isOpChar(this peekChar) { _src.popFront; return tkCOLON; }
-            // if ch == '='.char && !isOpChar(this peekChar) { _src.popFront; return tkEQUAL; }
-
-            // Is this an operator?
-            if isOpChar(ch)
-                return parseOperator(this)
-
-            // Check for dot -- dot followed by a digit is a floating point constant
-            //if ch == '.'.char && !isDigit(ch2) { _src.popFront; return tkDOT; }
-            /////////////////////////////////////////////////////////////////////////
-
-            // Identifiers
-            if isAlpha(ch) || ch == '_'.char return parseIdentifer(this)
-
-            // Numeric literals
-            if isDigit(ch) || ch == '.'.char return parseNumeric(this)
-
-            this reportError toString("Invalid character found: '", ch, "' (", Int(ch), ')'.char)
-            _src.popFront
-            return tkEND
-
-    fun isOpChar(c: Char): Bool
-        return (
-               c == '!'.char || c == '%'.char || c == '<'.char
-            || c == '^'.char || c == '&'.char || c == '-'.char
-            || c == '+'.char || c == '='.char || c == '|'.char
-            || c == '>'.char || c == '/'.char
-            || c == '*'.char || c == '.'.char 
-            )
-
-    // fun isOpCharDot(c: Char) = c == '.'.char || isOpChar(c)
-    //this advanceAndCapture \isOpCharDot
-
-    [native("tolower")]
-    fun tolower(c: Int): Int
-    fun toLower(c: Char) = Char(tolower(Int(c)))
-
-
-    // TODO - Add tkDOT
-    /// Parse an operator and Return the coresponding Token
-    fun parseOperator(this: @SparrowScanner): TokenType
-        var ch = *_src
-        var ch2 = this peekChar
-        var ch3 = this peekChar 2
-
-        // We already know that ch is part of an operator
-        //_src.popFront
-        this advanceAndCapture1
-        
-        if ch == '<'.char && ch2 == '='.char && ch3 == '='.char
+            // We already know that ch is part of an operator
+            //_src.popFront
             this advanceAndCapture1
-            this advanceAndCapture1
-            return tkLEFT_ASSIGN
+            
+            if ch == '<'.char && ch2 == '='.char && ch3 == '='.char
+                this advanceAndCapture1
+                this advanceAndCapture1
+                return tkLEFT_ASSIGN
+            
+            if ch == '>'.char && ch2 == '='.char && ch3 == '='.char
+                this advanceAndCapture1
+                this advanceAndCapture1
+                return tkRIGHT_ASSIGN
         
-        if ch == '>'.char && ch2 == '='.char && ch3 == '='.char
-            this advanceAndCapture1
-            this advanceAndCapture1
-            return tkRIGHT_ASSIGN
-    
-        if ch == '-'.char && ch2 == '>'.char { this advanceAndCapture1; return tkPTR_OP; }
-        if ch == '+'.char && ch2 == '+'.char { this advanceAndCapture1; return tkINC_OP; }
-        if ch == '-'.char && ch2 == '-'.char { this advanceAndCapture1; return tkDEC_OP; }
-        if ch == '<'.char && ch2 == '<'.char { this advanceAndCapture1; return tkLEFT_OP; }
-        if ch == '>'.char && ch2 == '>'.char { this advanceAndCapture1; return tkRIGHT_OP; }
-        if ch == '<'.char && ch2 == '='.char { this advanceAndCapture1; return tkLE_OP; }
-        if ch == '>'.char && ch2 == '='.char { this advanceAndCapture1; return tkGE_OP; }
-        if ch == '='.char && ch2 == '='.char { this advanceAndCapture1; return tkEQ_OP; }
-        if ch == '!'.char && ch2 == '='.char { this advanceAndCapture1; return tkNE_OP; }
+            if ch == '-'.char && ch2 == '>'.char { this advanceAndCapture1; return tkPTR_OP; }
+            if ch == '+'.char && ch2 == '+'.char { this advanceAndCapture1; return tkINC_OP; }
+            if ch == '-'.char && ch2 == '-'.char { this advanceAndCapture1; return tkDEC_OP; }
+            if ch == '<'.char && ch2 == '<'.char { this advanceAndCapture1; return tkLEFT_OP; }
+            if ch == '>'.char && ch2 == '>'.char { this advanceAndCapture1; return tkRIGHT_OP; }
+            if ch == '<'.char && ch2 == '='.char { this advanceAndCapture1; return tkLE_OP; }
+            if ch == '>'.char && ch2 == '='.char { this advanceAndCapture1; return tkGE_OP; }
+            if ch == '='.char && ch2 == '='.char { this advanceAndCapture1; return tkEQ_OP; }
+            if ch == '!'.char && ch2 == '='.char { this advanceAndCapture1; return tkNE_OP; }
+            
+            if ch == '&'.char && ch2 == '&'.char { this advanceAndCapture1; return tkAND_OP; }
+            if ch == '|'.char && ch2 == '|'.char { this advanceAndCapture1; return tkOR_OP; }
+            if ch == '%'.char && ch2 == '='.char { this advanceAndCapture1; return tkMOD_ASSIGN; }
+            if ch == '+'.char && ch2 == '='.char { this advanceAndCapture1; return tkADD_ASSIGN; }
+            
+            if ch == '-'.char && ch2 == '='.char { this advanceAndCapture1; return tkSUB_ASSIGN; }
+            if ch == '&'.char && ch2 == '='.char { this advanceAndCapture1; return tkAND_ASSIGN; }
+            if ch == '^'.char && ch2 == '='.char { this advanceAndCapture1; return tkXOR_ASSIGN; }
+            if ch == '|'.char && ch2 == '='.char { this advanceAndCapture1; return tkOR_ASSIGN; }
         
-        if ch == '&'.char && ch2 == '&'.char { this advanceAndCapture1; return tkAND_OP; }
-        if ch == '|'.char && ch2 == '|'.char { this advanceAndCapture1; return tkOR_OP; }
-        if ch == '%'.char && ch2 == '='.char { this advanceAndCapture1; return tkMOD_ASSIGN; }
-        if ch == '+'.char && ch2 == '='.char { this advanceAndCapture1; return tkADD_ASSIGN; }
-        
-        if ch == '-'.char && ch2 == '='.char { this advanceAndCapture1; return tkSUB_ASSIGN; }
-        if ch == '&'.char && ch2 == '='.char { this advanceAndCapture1; return tkAND_ASSIGN; }
-        if ch == '^'.char && ch2 == '='.char { this advanceAndCapture1; return tkXOR_ASSIGN; }
-        if ch == '|'.char && ch2 == '='.char { this advanceAndCapture1; return tkOR_ASSIGN; }
-    
-        if ch == '-'.char return tkMINUS
-        if ch == '+'.char return tkPLUS
-        if ch == '*'.char return tkMUL
-        if ch == '/'.char return tkDIV
-        if ch == '<'.char return tkLT
-        if ch == '>'.char return tkGT
-        if ch == '='.char return tkEQUAL
-        if ch == '!'.char return tkNOT
-        
-        if ch == '&'.char return tkAMPERSAND
-        if ch == '|'.char return tkOR
-        if ch == '%'.char return tkMOD
-        if ch == '+'.char return tkPLUS
-        if ch == '^'.char return tkXOR
+            if ch == '-'.char return tkMINUS
+            if ch == '+'.char return tkPLUS
+            if ch == '*'.char return tkMUL
+            if ch == '/'.char return tkDIV
+            if ch == '<'.char return tkLT
+            if ch == '>'.char return tkGT
+            if ch == '='.char return tkEQUAL
+            if ch == '!'.char return tkNOT
+            
+            if ch == '&'.char return tkAMPERSAND
+            if ch == '|'.char return tkOR
+            if ch == '%'.char return tkMOD
+            if ch == '+'.char return tkPLUS
+            if ch == '^'.char return tkXOR
 
 
-    /// Parse an identifier; we know that we start with a letter or underscore
-    /// Also checked for reserved keywords
-    fun parseIdentifer(this: @SparrowScanner): TokenType
-        // Capture all the characters possible for the identifier
-        var allowSymbolChars = false
-        _curToken.data += *_src
-        _src.popFront     // Skip the first char, we know it matches
+        /// Parse an identifier; we know that we start with a letter or underscore
+        /// Also checked for reserved keywords
+        fun parseIdentifer(this: @SparrowScanner): TokenType
+            // Capture all the characters possible for the identifier
+            var allowSymbolChars = false
+            _curToken.data += *_src
+            _src.popFront     // Skip the first char, we know it matches
 
-        while !!_src ; _src.popFront
+            while !!_src ; _src.popFront
+                var ch = *_src
+
+                // Check for characters allowed in the identifier
+                // At this point we only accept alpha-numeric and underscore
+                if !isAlpha(ch) && ch != '_'.char && !isDigit(ch)
+                    break
+
+                _curToken.data += ch
+
+            var data: @StringRef = _curToken.data.asStringRef
+            // Check for reserved words
+            if data == "sizeof"         return tkSIZEOF
+
+            else if data == "typedef"   return tkTYPEDEF
+            else if data == "extern"    return tkEXTERN
+            else if data == "static"    return tkSTATIC
+            else if data == "auto"      return tkAUTO
+            else if data == "register"  return tkREGISTER
+
+            else if data == "char"      return tkCHAR
+            else if data == "short"     return tkSHORT
+            else if data == "int"       return tkINT
+            else if data == "long"      return tkLONG
+            else if data == "signed"    return tkSIGNED
+            else if data == "unsigned"  return tkUNSIGNED
+            else if data == "float"     return tkFLOAT
+            else if data == "double"    return tkDOUBLE
+            else if data == "const"     return tkCONST
+            else if data == "volatile"  return tkVOLATILE
+            else if data == "void"      return tkVOID
+
+            else if data == "struct"    return tkSTRUCT
+            else if data == "union"     return tkUNION
+            else if data == "enum"      return tkENUM
+
+            else if data == "case"      return tkCASE
+            else if data == "default"   return tkDEFAULT
+            else if data == "if"        return tkIF
+            else if data == "else"      return tkELSE
+            else if data == "switch"    return tkSWITCH
+            else if data == "while"     return tkWHILE
+            else if data == "do"        return tkDO
+            else if data == "for"       return tkFOR
+            else if data == "goto"      return tkGOTO
+            else if data == "continue"  return tkCONTINUE
+            else if data == "break"     return tkBREAK
+            else if data == "return"    return tkRETURN
+
+            else                        return tkIDENTIFIER
+
+        fun parseNumeric(this: @SparrowScanner): TokenType
+            var isLong = false
+            var isUnsigned = false
+            var isFloating = false
+
             var ch = *_src
+            var ch2 = toLower(this peekChar)
 
-            // Check for characters allowed in the identifier
-            // At this point we only accept alpha-numeric and underscore
-            if !isAlpha(ch) && ch != '_'.char && !isDigit(ch)
-                break
-
-            _curToken.data += ch
-
-        var data: @StringRef = _curToken.data.asStringRef
-        // Check for reserved words
-        if data == "sizeof"         return tkSIZEOF
-
-        else if data == "typedef"   return tkTYPEDEF
-        else if data == "extern"    return tkEXTERN
-        else if data == "static"    return tkSTATIC
-        else if data == "auto"      return tkAUTO
-        else if data == "register"  return tkREGISTER
-
-        else if data == "char"      return tkCHAR
-        else if data == "short"     return tkSHORT
-        else if data == "int"       return tkINT
-        else if data == "long"      return tkLONG
-        else if data == "signed"    return tkSIGNED
-        else if data == "unsigned"  return tkUNSIGNED
-        else if data == "float"     return tkFLOAT
-        else if data == "double"    return tkDOUBLE
-        else if data == "const"     return tkCONST
-        else if data == "volatile"  return tkVOLATILE
-        else if data == "void"      return tkVOID
-
-        else if data == "struct"    return tkSTRUCT
-        else if data == "union"     return tkUNION
-        else if data == "enum"      return tkENUM
-
-        else if data == "case"      return tkCASE
-        else if data == "default"   return tkDEFAULT
-        else if data == "if"        return tkIF
-        else if data == "else"      return tkELSE
-        else if data == "switch"    return tkSWITCH
-        else if data == "while"     return tkWHILE
-        else if data == "do"        return tkDO
-        else if data == "for"       return tkFOR
-        else if data == "goto"      return tkGOTO
-        else if data == "continue"  return tkCONTINUE
-        else if data == "break"     return tkBREAK
-        else if data == "return"    return tkRETURN
-
-        else                        return tkIDENTIFIER
-
-    fun parseNumeric(this: @SparrowScanner): TokenType
-        var isLong = false
-        var isUnsigned = false
-        var isFloating = false
-
-        var ch = *_src
-        var ch2 = toLower(this peekChar)
-
-        // Do the main parsing of all the digits (until the decimal part)
-        if ch == '0'.char && ch2 == 'x'.char
-            _src advance 2
-            _curToken.intData = consumeDigits(_src, 16, _curToken.data)
-        else if ch == '0'.char && isDigit(ch2) // This is OCTAL
-            _src advance 1
-            _curToken.intData = consumeDigits(_src, 8, _curToken.data)
-        else
-            // Consume digits as much as possible
-            _curToken.intData = consumeDigits(_src, 10, _curToken.data)
-
-            // Check for floating number
-            if !!_src && toLower(*_src) == '.'.char
-                isFloating = true
-                this advanceAndCapture1
-                this advanceAndCapture \isDigit
-                
-            // Check for exp part -- TODO
-            //if !!_src && toLower(*_src) 'e'.char
-            //    this advanceAndCapture1
-
-            // Suffix for floats/longs -- TODO
-            /* if !!_src
-                isLong = true   // by default long
-            */
-
-        // Check if the number has enough digits
-        if _curToken.data.isEmpty
-            this reportError "Invalid numeric literal"
-            return tkEND
-
-        // Compute the value and return the token type
-        if isFloating
-            _curToken.data += Char(0)
-            _curToken.floatData = (_curToken.data.asStringRef asDouble)
-            _curToken.data popBack
-            return ife(isLong, tkDOUBLE_LITERAL, tkFLOAT_LITERAL)
-
-        if isUnsigned
-            return ife(isLong, tkUINT_LITERAL, tkUINT_LITERAL)
-
-        return ife(isLong, tkINT_LITERAL, tkINT_LITERAL)
-
-    fun getDigitVal(c: Char) = (Int(c) - Int('0'.char))
-    fun getXdigitVal(c: Char) = ife(isDigit(c), Int(c) - Int('0'.char), 10 + Int(toLower(c)) - Int('a'.char))
-
-    fun consumeDigits(r: @Range, base: ULong, capture: @String): ULong
-        var res: ULong = 0
-        if base == 16
-            while !!r && (isXdigit(*r)) ; r.popFront
-                capture += *r
-                res *= base
-                res += getXdigitVal(*r)
-        else
-            while !!r && (isXdigit(*r)) ; r.popFront
-                capture += *r
-                res *= base
-                res += getDigitVal(*r)
-        return res
-
-    fun checkEscapeChar(this: @SparrowScanner): Bool
-        var ch = *_src
-        if ch == '\\'.char
-            ch = ++_src
-            if ch == 'r'.char
-                _curToken.data += '\r'.char
-            else if ch == 'n'.char
-                _curToken.data += '\n'.char
-            else if ch == 'b'.char
-                _curToken.data += '\b'.char
-            else if ch == 'f'.char
-                _curToken.data += '\f'.char
-            else if ch == 't'.char
-                _curToken.data += '\t'.char
-            else if ch == '\\'.char
-                _curToken.data += '\\'.char
-            else if ch == "'".char
-                _curToken.data += "'".char
-            else if ch == '\"'.char
-                _curToken.data += '\"'.char
-            else if ch == 'x'.char || ch == 'X'.char
-                if this hasLessThan 2
-                    this reportError "Not enough digits for character code"
-                    return true
-                var charVal: Int = 16*getXdigitVal(++_src)
-                charVal += getXdigitVal(++_src)
-                _curToken.data += Char(charVal)
+            // Do the main parsing of all the digits (until the decimal part)
+            if ch == '0'.char && ch2 == 'x'.char
+                _src advance 2
+                _curToken.intData = consumeDigits(_src, 16, _curToken.data)
+            else if ch == '0'.char && isDigit(ch2) // This is OCTAL
+                _src advance 1
+                _curToken.intData = consumeDigits(_src, 8, _curToken.data)
             else
-                // Just use the next character
-                _curToken.data += ++_src
-            _src.popFront  // Advance past the escape sequence
-            return true
-        return false
+                // Consume digits as much as possible
+                _curToken.intData = consumeDigits(_src, 10, _curToken.data)
 
-    fun parseChar(this: @SparrowScanner, endChar: Char): TokenType
-        _src.popFront
-        this advanceAndCapture1
-        _src.popFront
+                // Check for floating number
+                if !!_src && toLower(*_src) == '.'.char
+                    isFloating = true
+                    this advanceAndCapture1
+                    this advanceAndCapture \isDigit
+                    
+                // Check for exp part -- TODO
+                //if !!_src && toLower(*_src) 'e'.char
+                //    this advanceAndCapture1
 
-        return tkCHAR_LITERAL
+                // Suffix for floats/longs -- TODO
+                /* if !!_src
+                    isLong = true   // by default long
+                */
 
-    fun parseString(this: @SparrowScanner, endChar: Char): TokenType
-        _src.popFront
-        if this hasLessThan 1
-            this reportError "End of file found inside string literal"
-            return tkEND
+            // Check if the number has enough digits
+            if _curToken.data.isEmpty
+                this reportError "Invalid numeric literal"
+                return tkEND
 
-        // Get all the characters from the string
-        while !!_src && *_src != endChar
-            if !checkEscapeChar(this)
-                this advanceAndCapture1
+            // Compute the value and return the token type
+            if isFloating
+                _curToken.data += Char(0)
+                _curToken.floatData = (_curToken.data.asStringRef asDouble)
+                _curToken.data popBack
+                return ife(isLong, tkDOUBLE_LITERAL, tkFLOAT_LITERAL)
 
-        // Now expect closing quote
-        // We shouldn't be at the end of the scope
-        if !_src
-            this reportError "End of file found inside string literal"
-            return tkEND
-        _src.popFront
+            if isUnsigned
+                return ife(isLong, tkUINT_LITERAL, tkUINT_LITERAL)
 
-        return tkSTRING_LITERAL
+            return ife(isLong, tkINT_LITERAL, tkINT_LITERAL)
+
+        fun getDigitVal(c: Char) = (Int(c) - Int('0'.char))
+        fun getXdigitVal(c: Char) = ife(isDigit(c), Int(c) - Int('0'.char), 10 + Int(toLower(c)) - Int('a'.char))
+
+        fun consumeDigits(r: @Range, base: ULong, capture: @String): ULong
+            var res: ULong = 0
+            if base == 16
+                while !!r && (isXdigit(*r)) ; r.popFront
+                    capture += *r
+                    res *= base
+                    res += getXdigitVal(*r)
+            else
+                while !!r && (isXdigit(*r)) ; r.popFront
+                    capture += *r
+                    res *= base
+                    res += getDigitVal(*r)
+            return res
+
+        fun checkEscapeChar(this: @SparrowScanner): Bool
+            var ch = *_src
+            if ch == '\\'.char
+                ch = ++_src
+                if ch == 'r'.char
+                    _curToken.data += '\r'.char
+                else if ch == 'n'.char
+                    _curToken.data += '\n'.char
+                else if ch == 'b'.char
+                    _curToken.data += '\b'.char
+                else if ch == 'f'.char
+                    _curToken.data += '\f'.char
+                else if ch == 't'.char
+                    _curToken.data += '\t'.char
+                else if ch == '\\'.char
+                    _curToken.data += '\\'.char
+                else if ch == "'".char
+                    _curToken.data += "'".char
+                else if ch == '\"'.char
+                    _curToken.data += '\"'.char
+                else if ch == 'x'.char || ch == 'X'.char
+                    if this hasLessThan 2
+                        this reportError "Not enough digits for character code"
+                        return true
+                    var charVal: Int = 16*getXdigitVal(++_src)
+                    charVal += getXdigitVal(++_src)
+                    _curToken.data += Char(charVal)
+                else
+                    // Just use the next character
+                    _curToken.data += ++_src
+                _src.popFront  // Advance past the escape sequence
+                return true
+            return false
+
+        fun parseChar(this: @SparrowScanner, endChar: Char): TokenType
+            _src.popFront
+            this advanceAndCapture1
+            _src.popFront
+
+            return tkCHAR_LITERAL
+
+        fun parseString(this: @SparrowScanner, endChar: Char): TokenType
+            _src.popFront
+            if this hasLessThan 1
+                this reportError "End of file found inside string literal"
+                return tkEND
+
+            // Get all the characters from the string
+            while !!_src && *_src != endChar
+                if !checkEscapeChar(this)
+                    this advanceAndCapture1
+
+            // Now expect closing quote
+            // We shouldn't be at the end of the scope
+            if !_src
+                this reportError "End of file found inside string literal"
+                return tkEND
+            _src.popFront
+
+            return tkSTRING_LITERAL

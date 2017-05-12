@@ -2,12 +2,14 @@
 import scanner, parser
 import os, std.newDelete
 
+[rtct]
 class ExternalErrorReporter
     fun reportError(loc: Location, msg: @String)
         //reportErrorExternal(loc, msg.asStringRef())
         cout << "ERROR: " << msg.asStringRef() << endl
         exit(0)
 
+[rtct]
 class _CharSource
     using RetType = Char
 
@@ -18,18 +20,19 @@ class _CharSource
         this.fileRange := fileRange
         this.stringRange ctor code
 
+[rtct]
 fun isEmpty(this: @_CharSource): Bool = ife(fileRange !== null, fileRange.isEmpty, stringRange.isEmpty)
-
+[rtct]
 fun front(this: @_CharSource): Char
     if ( fileRange !== null ) return fileRange.front
     else return stringRange.front
-    
+[rtct]
 fun popFront(this: @_CharSource)
     if fileRange !== null
         fileRange.popFront
     else stringRange.popFront
 
-
+[rtct]
 class ParserContext
     using _ScannerType = SparrowScanner(_CharSource, ExternalErrorReporter)
     using _ParserType = SparrowParser(_ScannerType, ExternalErrorReporter)
@@ -61,18 +64,17 @@ class ParserContext
         if !scannerOnly
             _parser.ctor(_scanner, reporter)
 
-
+[rtct]
 fun createScanner(filename, code: StringRef, loc: @Location): @ParserContext
     return new(ParserContext, filename, code, loc, true)
-
+[rtct]
 fun createParser(filename, code: StringRef, loc: @Location): @ParserContext
     return new(ParserContext, filename, code, loc)
-
+[rtct]
 fun destroyParser(ctx: @ParserContext)
     delete(ctx)
-
+[rtct]
 fun nextToken(ctx: @ParserContext, outToken: @Token)
     outToken = (ctx._scanner++)
-
+[rtct]
 fun parseHeader(ctx: @ParserContext): NodePtr = ctx._parser parseHeader
-

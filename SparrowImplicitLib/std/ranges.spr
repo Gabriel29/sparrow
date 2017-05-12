@@ -564,7 +564,7 @@ concept RandomAccessRange(x: BidirRange) if (
 
 
 // TODO: Check why this doesn't work in rtct mode
-[rt]
+[rtct]
     fun values(v0,v1: AnyType) = mkValuesRange(mkValues(v0,v1))
     fun values(v0,v1,v2: AnyType) = mkValuesRange(mkValues(v0,v1,v2))
     fun values(v0,v1,v2,v3: AnyType) = mkValuesRange(mkValues(v0,v1,v2,v3))
