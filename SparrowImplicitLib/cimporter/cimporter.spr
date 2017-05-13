@@ -11,18 +11,18 @@ package meta {
 }
 
 [ct]
-fun handleCode(filename: StringRef, location: meta.Location, context: meta.CompilationContext): meta.AstNode
+fun handleCode(filename: StringRef, loc: meta.Location, context: meta.CompilationContext): meta.AstNode
     var t: time.Timer
     var code: StringRef
     var res : AstNode
-    var parser: @ParserContext = createParser(filename, code, location)
-    //var rootNode : NodePtr = parser parseHeader
+    var parser: @ParserContext = createParser(filename, code, loc)
+    var rootNode = parser parseHeader
 
     //genCImporter(rootNode)
     //res setContext context
     cout << "Elapsed: " << t.elapsed() << endl << flush
 
-    parser destroyParser
+    //parser destroyParser
     return res
 
 fun generateSparrowFromC(filename, code: StringRef): String

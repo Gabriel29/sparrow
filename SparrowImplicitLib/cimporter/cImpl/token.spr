@@ -57,7 +57,7 @@ concept TokenRange(x: Range) if -@(x.RetType) == Token
 
     var tkTYPEDEF          = TokenType(31)
     var tkEXTERN           = TokenType(32)
-    var tkSTATIC           = TokenType(32)
+    var tkSTATIC           = TokenType(33)
     var tkAUTO             = TokenType(34)
     var tkREGISTER         = TokenType(35)
 

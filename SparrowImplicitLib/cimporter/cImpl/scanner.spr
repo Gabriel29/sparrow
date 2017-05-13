@@ -74,7 +74,7 @@ fun front(this: @SparrowScanner): Token
 
 [rtct]
 fun popFront(this: @SparrowScanner)
-    if (_src.isEmpty) && _curToken.type == tkEND
+    if (_src.isEmpty) && _curToken.type == TokenType(0) //tkEND
         _atEnd = true
     else
         _curToken.type = _Impl.nextToken(this)
@@ -121,7 +121,7 @@ package _Impl
 
                 // First check if the source is empty; if so, return an EOF token
                 if _src.isEmpty
-                    return tkEND
+                    return TokenType(0) //tkEND
 
                 // Get the first character in the source
                 var ch = *_src
@@ -160,7 +160,7 @@ package _Impl
                         c2 = ++_src
                     if !_src
                         this reportError "End of file found inside comment"
-                        return tkEND
+                        return TokenType(0)//tkEND
                     _src.popFront     // move past '/'
                     continue
 
@@ -178,14 +178,14 @@ package _Impl
                 //////////////////////////////////////////////////////////////////////
 
                 // Symbols
-                if ch == ';'.char  { _src.popFront; return tkSEMICOLON; }
-                if ch == ','.char  { _src.popFront; return tkCOMMA; }
-                if ch == '{'.char  { _src.popFront; return tkLCURLY; }
-                if ch == '}'.char  { _src.popFront; return tkRCURLY; }
-                if ch == '['.char  { _src.popFront; return tkLBRACKET; }
-                if ch == ']'.char  { _src.popFront; return tkRBRACKET; }
-                if ch == '('.char  { _src.popFront; return tkLPAREN; }
-                if ch == ')'.char  { _src.popFront; return tkRPAREN; }
+                if ch == ';'.char  { _src.popFront; return TokenType(68); } //tkSEMICOLON; }
+                if ch == ','.char  { _src.popFront; return TokenType(71); } //tkCOMMA; }
+                if ch == '{'.char  { _src.popFront; return TokenType(69); } //tkLCURLY; }
+                if ch == '}'.char  { _src.popFront; return TokenType(70); } //tkRCURLY; }
+                if ch == '['.char  { _src.popFront; return TokenType(76); } //tkLBRACKET; }
+                if ch == ']'.char  { _src.popFront; return TokenType(77); } //tkRBRACKET; }
+                if ch == '('.char  { _src.popFront; return TokenType(74); } //tkLPAREN; }
+                if ch == ')'.char  { _src.popFront; return TokenType(75); } //tkRPAREN; }
 
                 // These two symbols can also be part of operators
                 // if ch == ':'.char && !isOpChar(this peekChar) { _src.popFront; return tkCOLON; }
@@ -208,7 +208,7 @@ package _Impl
                 //TODO
                 //this reportError toString("Invalid character found: '", ch, "' (", Int(ch), ')'.char)
                 _src.popFront
-                return tkEND
+                return TokenType(0) //tkEND
 
         fun isOpChar(c: Char): Bool
             return (
@@ -241,47 +241,47 @@ package _Impl
             if ch == '<'.char && ch2 == '='.char && ch3 == '='.char
                 this advanceAndCapture1
                 this advanceAndCapture1
-                return tkLEFT_ASSIGN
+                return TokenType(26) //tkLEFT_ASSIGN
             
             if ch == '>'.char && ch2 == '='.char && ch3 == '='.char
                 this advanceAndCapture1
                 this advanceAndCapture1
-                return tkRIGHT_ASSIGN
+                return TokenType(27) //tkRIGHT_ASSIGN
         
-            if ch == '-'.char && ch2 == '>'.char { this advanceAndCapture1; return tkPTR_OP; }
-            if ch == '+'.char && ch2 == '+'.char { this advanceAndCapture1; return tkINC_OP; }
-            if ch == '-'.char && ch2 == '-'.char { this advanceAndCapture1; return tkDEC_OP; }
-            if ch == '<'.char && ch2 == '<'.char { this advanceAndCapture1; return tkLEFT_OP; }
-            if ch == '>'.char && ch2 == '>'.char { this advanceAndCapture1; return tkRIGHT_OP; }
-            if ch == '<'.char && ch2 == '='.char { this advanceAndCapture1; return tkLE_OP; }
-            if ch == '>'.char && ch2 == '='.char { this advanceAndCapture1; return tkGE_OP; }
-            if ch == '='.char && ch2 == '='.char { this advanceAndCapture1; return tkEQ_OP; }
-            if ch == '!'.char && ch2 == '='.char { this advanceAndCapture1; return tkNE_OP; }
+            if ch == '-'.char && ch2 == '>'.char { this advanceAndCapture1; return TokenType(10); } //tkPTR_OP; }
+            if ch == '+'.char && ch2 == '+'.char { this advanceAndCapture1; return TokenType(11); } //tkINC_OP; }
+            if ch == '-'.char && ch2 == '-'.char { this advanceAndCapture1; return TokenType(12); } //tkDEC_OP; }
+            if ch == '<'.char && ch2 == '<'.char { this advanceAndCapture1; return TokenType(13); } //tkLEFT_OP; }
+            if ch == '>'.char && ch2 == '>'.char { this advanceAndCapture1; return TokenType(14); } //tkRIGHT_OP; }
+            if ch == '<'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(15); } //tkLE_OP; }
+            if ch == '>'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(16); } //tkGE_OP; }
+            if ch == '='.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(17); } //tkEQ_OP; }
+            if ch == '!'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(18); } //tkNE_OP; }
             
-            if ch == '&'.char && ch2 == '&'.char { this advanceAndCapture1; return tkAND_OP; }
-            if ch == '|'.char && ch2 == '|'.char { this advanceAndCapture1; return tkOR_OP; }
-            if ch == '%'.char && ch2 == '='.char { this advanceAndCapture1; return tkMOD_ASSIGN; }
-            if ch == '+'.char && ch2 == '='.char { this advanceAndCapture1; return tkADD_ASSIGN; }
+            if ch == '&'.char && ch2 == '&'.char { this advanceAndCapture1; return TokenType(19); } //tkAND_OP; }
+            if ch == '|'.char && ch2 == '|'.char { this advanceAndCapture1; return TokenType(20); } //tkOR_OP; }
+            if ch == '%'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(23); } //tkMOD_ASSIGN; }
+            if ch == '+'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(24); } //tkADD_ASSIGN; }
             
-            if ch == '-'.char && ch2 == '='.char { this advanceAndCapture1; return tkSUB_ASSIGN; }
-            if ch == '&'.char && ch2 == '='.char { this advanceAndCapture1; return tkAND_ASSIGN; }
-            if ch == '^'.char && ch2 == '='.char { this advanceAndCapture1; return tkXOR_ASSIGN; }
-            if ch == '|'.char && ch2 == '='.char { this advanceAndCapture1; return tkOR_ASSIGN; }
+            if ch == '-'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(25); } //tkSUB_ASSIGN; }
+            if ch == '&'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(28); } //tkAND_ASSIGN; }
+            if ch == '^'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(29); } //tkXOR_ASSIGN; }
+            if ch == '|'.char && ch2 == '='.char { this advanceAndCapture1; return TokenType(30); } //tkOR_ASSIGN; }
         
-            if ch == '-'.char return tkMINUS
-            if ch == '+'.char return tkPLUS
-            if ch == '*'.char return tkMUL
-            if ch == '/'.char return tkDIV
-            if ch == '<'.char return tkLT
-            if ch == '>'.char return tkGT
-            if ch == '='.char return tkEQUAL
-            if ch == '!'.char return tkNOT
+            if ch == '-'.char return TokenType(82) //tkMINUS
+            if ch == '+'.char return TokenType(83) //tkPLUS
+            if ch == '*'.char return TokenType(84) //tkMUL
+            if ch == '/'.char return TokenType(85) //tkDIV
+            if ch == '<'.char return TokenType(87) //tkLT
+            if ch == '>'.char return TokenType(88) //tkGT
+            if ch == '='.char return TokenType(73) //tkEQUAL
+            if ch == '!'.char return TokenType(80) //tkNOT
             
-            if ch == '&'.char return tkAMPERSAND
-            if ch == '|'.char return tkOR
-            if ch == '%'.char return tkMOD
-            if ch == '+'.char return tkPLUS
-            if ch == '^'.char return tkXOR
+            if ch == '&'.char return TokenType(79) //tkAMPERSAND
+            if ch == '|'.char return TokenType(90) //tkOR
+            if ch == '%'.char return TokenType(86) //tkMOD
+            if ch == '^'.char return TokenType(89) //tkXOR
+
 
 
         /// Parse an identifier; we know that we start with a letter or underscore
@@ -304,44 +304,44 @@ package _Impl
 
             var data: @StringRef = _curToken.data.asStringRef
             // Check for reserved words
-            if data == "sizeof"         return tkSIZEOF
+            if data == "sizeof"         return TokenType(5) //tkSIZEOF
 
-            else if data == "typedef"   return tkTYPEDEF
-            else if data == "extern"    return tkEXTERN
-            else if data == "static"    return tkSTATIC
-            else if data == "auto"      return tkAUTO
-            else if data == "register"  return tkREGISTER
+            else if data == "typedef"   return TokenType(31) //tkTYPEDEF
+            else if data == "extern"    return TokenType(32) //tkEXTERN
+            else if data == "static"    return TokenType(33) //tkSTATIC
+            else if data == "auto"      return TokenType(34) //tkAUTO
+            else if data == "register"  return TokenType(35) //tkREGISTER
 
-            else if data == "char"      return tkCHAR
-            else if data == "short"     return tkSHORT
-            else if data == "int"       return tkINT
-            else if data == "long"      return tkLONG
-            else if data == "signed"    return tkSIGNED
-            else if data == "unsigned"  return tkUNSIGNED
-            else if data == "float"     return tkFLOAT
-            else if data == "double"    return tkDOUBLE
-            else if data == "const"     return tkCONST
-            else if data == "volatile"  return tkVOLATILE
-            else if data == "void"      return tkVOID
+            else if data == "char"      return TokenType(40) //tkCHAR
+            else if data == "short"     return TokenType(41) //tkSHORT
+            else if data == "int"       return TokenType(42) //tkINT
+            else if data == "long"      return TokenType(43) //tkLONG
+            else if data == "signed"    return TokenType(44) //tkSIGNED
+            else if data == "unsigned"  return TokenType(45) //tkUNSIGNED
+            else if data == "float"     return TokenType(46) //tkFLOAT
+            else if data == "double"    return TokenType(47) //tkDOUBLE
+            else if data == "const"     return TokenType(48) //tkCONST
+            else if data == "volatile"  return TokenType(49) //tkVOLATILE
+            else if data == "void"      return TokenType(67) //tkVOID
 
-            else if data == "struct"    return tkSTRUCT
-            else if data == "union"     return tkUNION
-            else if data == "enum"      return tkENUM
+            else if data == "struct"    return TokenType(50) //tkSTRUCT
+            else if data == "union"     return TokenType(51) //tkUNION
+            else if data == "enum"      return TokenType(52) //tkENUM
 
-            else if data == "case"      return tkCASE
-            else if data == "default"   return tkDEFAULT
-            else if data == "if"        return tkIF
-            else if data == "else"      return tkELSE
-            else if data == "switch"    return tkSWITCH
-            else if data == "while"     return tkWHILE
-            else if data == "do"        return tkDO
-            else if data == "for"       return tkFOR
-            else if data == "goto"      return tkGOTO
-            else if data == "continue"  return tkCONTINUE
-            else if data == "break"     return tkBREAK
-            else if data == "return"    return tkRETURN
+            else if data == "case"      return TokenType(54) //tkCASE
+            else if data == "default"   return TokenType(55) //tkDEFAULT
+            else if data == "if"        return TokenType(56) //tkIF
+            else if data == "else"      return TokenType(57) //tkELSE
+            else if data == "switch"    return TokenType(58) //tkSWITCH
+            else if data == "while"     return TokenType(59) //tkWHILE
+            else if data == "do"        return TokenType(60) //tkDO
+            else if data == "for"       return TokenType(61) //tkFOR
+            else if data == "goto"      return TokenType(62) //tkGOTO
+            else if data == "continue"  return TokenType(63) //tkCONTINUE
+            else if data == "break"     return TokenType(64) //tkBREAK
+            else if data == "return"    return TokenType(65) //tkRETURN
 
-            else                        return tkIDENTIFIER
+            else                        return TokenType(2) //tkIDENTIFIER
 
         fun parseNumeric(this: @SparrowScanner): TokenType
             var isLong = false
@@ -380,19 +380,22 @@ package _Impl
             // Check if the number has enough digits
             if _curToken.data.isEmpty
                 this reportError "Invalid numeric literal"
-                return tkEND
+                return TokenType(0) //tkEND
 
             // Compute the value and return the token type
             if isFloating
                 _curToken.data += Char(0)
                 _curToken.floatData = (_curToken.data.asStringRef asDouble)
                 _curToken.data popBack
-                return ife(isLong, tkDOUBLE_LITERAL, tkFLOAT_LITERAL)
+                //return ife(isLong, tkDOUBLE_LITERAL, tkFLOAT_LITERAL)
+                return ife(isLong, TokenType(205), TokenType(203))
 
             if isUnsigned
-                return ife(isLong, tkUINT_LITERAL, tkUINT_LITERAL)
+                //return ife(isLong, tkUINT_LITERAL, tkUINT_LITERAL)
+                return TokenType(202)
 
-            return ife(isLong, tkINT_LITERAL, tkINT_LITERAL)
+            //return ife(isLong, tkINT_LITERAL, tkINT_LITERAL)
+            return TokenType(201)
 
         fun getDigitVal(c: Char) = (Int(c) - Int('0'.char))
         fun getXdigitVal(c: Char) = ife(isDigit(c), Int(c) - Int('0'.char), 10 + Int(toLower(c)) - Int('a'.char))
@@ -450,13 +453,13 @@ package _Impl
             this advanceAndCapture1
             _src.popFront
 
-            return tkCHAR_LITERAL
+            return TokenType(200) //tkCHAR_LITERAL
 
         fun parseString(this: @SparrowScanner, endChar: Char): TokenType
             _src.popFront
             if this hasLessThan 1
                 this reportError "End of file found inside string literal"
-                return tkEND
+                return TokenType(0) //tkEND
 
             // Get all the characters from the string
             while !!_src && *_src != endChar
@@ -467,7 +470,7 @@ package _Impl
             // We shouldn't be at the end of the scope
             if !_src
                 this reportError "End of file found inside string literal"
-                return tkEND
+                return TokenType(0) //tkEND
             _src.popFront
 
-            return tkSTRING_LITERAL
+            return TokenType(4) //tkSTRING_LITERAL

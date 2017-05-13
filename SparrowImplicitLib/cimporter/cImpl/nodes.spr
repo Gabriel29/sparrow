@@ -33,7 +33,7 @@ class Node
     fun ctor(l: Location, kind: StringRef)
         this.kind ctor kind
         this.loc ctor l
-        //cout << "Parsed: " << kind << endl
+        cout << "Parsed: " << kind << endl
         
     fun ctor(l: Location, kind: StringRef, r: Range)
         this.kind ctor kind
