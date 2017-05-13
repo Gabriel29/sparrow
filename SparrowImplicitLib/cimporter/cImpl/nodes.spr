@@ -39,7 +39,7 @@ class Node
         this.kind ctor kind
         this.loc ctor l
         children ctor r
-        //cout << "Parsed: " << kind << endl
+        cout << "Parsed: " << kind << endl
 
     fun ctor(l: Location, kind: StringRef, r: Range, name: StringRef)
         this.kind ctor kind
@@ -52,7 +52,7 @@ class Node
         this.kind ctor kind
         this.loc ctor l
         this.name ctor name
-        //cout << "Parsed: " << kind << endl
+        cout << "Parsed: " << kind << endl
 
 [rtct]
     fun createNode(l: Location, kind: StringRef): NodePtr = new(Node, l, kind)

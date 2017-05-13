@@ -46,7 +46,7 @@ fun doScan(filename, code: StringRef)
     var token: Token
     while true
         nextToken(parser, token)
-        cout << token.type.data << " - '" << token.data << "' - " << token.loc << endl
+        cout << token.type << " - '" << token.data << "' - " << token.loc << endl
         if token.type == tkEND
             break
     parser destroyParser

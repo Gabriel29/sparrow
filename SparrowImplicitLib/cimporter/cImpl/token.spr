@@ -2,8 +2,7 @@ import meta.location
 import std.string
 
 /// A token type; identifies the type of the token
-[rtct]
-datatype TokenType = Int
+using TokenType = Int
 
 /// The actual token; holds all the information needed for a token
 [rtct]
@@ -19,109 +18,108 @@ datatype Token
 concept TokenRange(x: Range) if -@(x.RetType) == Token
 
 // The list of all tokens used by the parser/scanner
-[rtct]
-    var tkEND              = TokenType(0)
-    var tkEOL              = TokenType(1)
+using tkEND              = 0
+using tkEOL              = 1
 
-    var tkIDENTIFIER       = TokenType(2)
-    var tkCONSTANT         = TokenType(3)
-    var tkSTRING_LITERAL   = TokenType(4)
-    var tkSIZEOF           = TokenType(5)
+using tkIDENTIFIER       = 2
+using tkCONSTANT         = 3
+using tkSTRING_LITERAL   = 4
+using tkSIZEOF           = 5
 
-    var tkTYPE_NAME        = TokenType(6)
+using tkTYPE_NAME        = 6
 
-    var tkPTR_OP           = TokenType(10)
-    var tkINC_OP           = TokenType(11)
-    var tkDEC_OP           = TokenType(12)   
-    var tkLEFT_OP          = TokenType(13)
-    var tkRIGHT_OP         = TokenType(14)
-    var tkLE_OP            = TokenType(15)
-    var tkGE_OP            = TokenType(16)
-    var tkEQ_OP            = TokenType(17)
-    var tkNE_OP            = TokenType(18)
+using tkPTR_OP           = 10
+using tkINC_OP           = 11
+using tkDEC_OP           = 12
+using tkLEFT_OP          = 13
+using tkRIGHT_OP         = 14
+using tkLE_OP            = 15
+using tkGE_OP            = 16
+using tkEQ_OP            = 17
+using tkNE_OP            = 18
 
-    var tkAND_OP           = TokenType(19)
-    var tkOR_OP            = TokenType(20)
-    var tkMUL_ASSIGN       = TokenType(21)
-    var tkDIV_ASSIGN       = TokenType(22)
-    var tkMOD_ASSIGN       = TokenType(23)
-    var tkADD_ASSIGN       = TokenType(24)
+using tkAND_OP           = 19
+using tkOR_OP            = 20
+using tkMUL_ASSIGN       = 21
+using tkDIV_ASSIGN       = 22
+using tkMOD_ASSIGN       = 23
+using tkADD_ASSIGN       = 24
 
-    var tkSUB_ASSIGN       = TokenType(25)
-    var tkLEFT_ASSIGN      = TokenType(26)
-    var tkRIGHT_ASSIGN     = TokenType(27)
+using tkSUB_ASSIGN       = 25
+using tkLEFT_ASSIGN      = 26
+using tkRIGHT_ASSIGN     = 27
 
-    var tkAND_ASSIGN       = TokenType(28)
-    var tkXOR_ASSIGN       = TokenType(29)
-    var tkOR_ASSIGN        = TokenType(30)
+using tkAND_ASSIGN       = 28
+using tkXOR_ASSIGN       = 29
+using tkOR_ASSIGN        = 30
 
-    var tkTYPEDEF          = TokenType(31)
-    var tkEXTERN           = TokenType(32)
-    var tkSTATIC           = TokenType(33)
-    var tkAUTO             = TokenType(34)
-    var tkREGISTER         = TokenType(35)
+using tkTYPEDEF          = 31
+using tkEXTERN           = 32
+using tkSTATIC           = 33
+using tkAUTO             = 34
+using tkREGISTER         = 35
 
-    var tkCHAR             = TokenType(40)
-    var tkSHORT            = TokenType(41)
-    var tkINT              = TokenType(42)
-    var tkLONG             = TokenType(43)
-    var tkSIGNED           = TokenType(44)
-    var tkUNSIGNED         = TokenType(45)
-    var tkFLOAT            = TokenType(46)
-    var tkDOUBLE           = TokenType(47)
-    var tkCONST            = TokenType(48)
-    var tkVOLATILE         = TokenType(49)
-    var tkVOID             = TokenType(67)
+using tkCHAR             = 40
+using tkSHORT            = 41
+using tkINT              = 42
+using tkLONG             = 43
+using tkSIGNED           = 44
+using tkUNSIGNED         = 45
+using tkFLOAT            = 46
+using tkDOUBLE           = 47
+using tkCONST            = 48
+using tkVOLATILE         = 49
+using tkVOID             = 67
 
-    var tkSTRUCT           = TokenType(50)
-    var tkUNION            = TokenType(51)
-    var tkENUM             = TokenType(52)
-    var tkELLIPSIS         = TokenType(53)
+using tkSTRUCT           = 50
+using tkUNION            = 51
+using tkENUM             = 52
+using tkELLIPSIS         = 53
 
-    var tkCASE             = TokenType(54)
-    var tkDEFAULT          = TokenType(55)
-    var tkIF               = TokenType(56)
-    var tkELSE             = TokenType(57)
-    var tkSWITCH           = TokenType(58)
-    var tkWHILE            = TokenType(59)
-    var tkDO               = TokenType(60)
-    var tkFOR              = TokenType(61)
-    var tkGOTO             = TokenType(62)
-    var tkCONTINUE         = TokenType(63)
-    var tkBREAK            = TokenType(64)
-    var tkRETURN           = TokenType(65)
+using tkCASE             = 54
+using tkDEFAULT          = 55
+using tkIF               = 56
+using tkELSE             = 57
+using tkSWITCH           = 58
+using tkWHILE            = 59
+using tkDO               = 60
+using tkFOR              = 61
+using tkGOTO             = 62
+using tkCONTINUE         = 63
+using tkBREAK            = 64
+using tkRETURN           = 65
 
-    var tkSEMICOLON        = TokenType(68)
-    var tkLCURLY           = TokenType(69)
-    var tkRCURLY           = TokenType(70)
-    var tkCOMMA            = TokenType(71)
-    var tkCOLON            = TokenType(72)
-    var tkEQUAL            = TokenType(73)
-    var tkLPAREN           = TokenType(74)
-    var tkRPAREN           = TokenType(75)
-    var tkLBRACKET         = TokenType(76)
-    var tkRBRACKET         = TokenType(77)
-    var tkDOT              = TokenType(78)
-    var tkAMPERSAND        = TokenType(79)
-    var tkNOT              = TokenType(80)
-    var tkTILDA            = TokenType(81)
-    var tkMINUS            = TokenType(82)
-    var tkPLUS             = TokenType(83)
-    var tkMUL              = TokenType(84)
-    var tkDIV              = TokenType(85)
-    var tkMOD              = TokenType(86)
-    var tkLT               = TokenType(87)
-    var tkGT               = TokenType(88)
-    var tkXOR              = TokenType(89)
-    var tkOR               = TokenType(90)
-    var tkQMARK            = TokenType(91)
+using tkSEMICOLON        = 68
+using tkLCURLY           = 69
+using tkRCURLY           = 70
+using tkCOMMA            = 71
+using tkCOLON            = 72
+using tkEQUAL            = 73
+using tkLPAREN           = 74
+using tkRPAREN           = 75
+using tkLBRACKET         = 76
+using tkRBRACKET         = 77
+using tkDOT              = 78
+using tkAMPERSAND        = 79
+using tkNOT              = 80
+using tkTILDA            = 81
+using tkMINUS            = 82
+using tkPLUS             = 83
+using tkMUL              = 84
+using tkDIV              = 85
+using tkMOD              = 86
+using tkLT               = 87
+using tkGT               = 88
+using tkXOR              = 89
+using tkOR               = 90
+using tkQMARK            = 91
 
-    var tkCHAR_LITERAL     = TokenType(200)
-    var tkINT_LITERAL      = TokenType(201)
-    var tkUINT_LITERAL     = TokenType(202)
-    var tkFLOAT_LITERAL    = TokenType(203)
-    var tkUFLOAT_LITERAL   = TokenType(204)
-    var tkDOUBLE_LITERAL   = TokenType(205)
+using tkCHAR_LITERAL     = 200
+using tkINT_LITERAL      = 201
+using tkUINT_LITERAL     = 202
+using tkFLOAT_LITERAL    = 203
+using tkUFLOAT_LITERAL   = 204
+using tkDOUBLE_LITERAL   = 205
 
 
 // C Preprocessor tokens
@@ -140,7 +138,7 @@ using ptkPRAGMA             = TokenType(110)
 */
 
 [rtct]
-fun _asString(t: TokenType): String
+fun token_asString(t: TokenType): String
     if t == tkEND                   return "end-of-file"
     else if t == tkEOL              return "new-line"
     else if t == tkIDENTIFIER       return "identifier"
@@ -260,6 +258,6 @@ fun _asString(t: TokenType): String
     else if t == ptkPRAGMA          return "'pragma'"
     */
 
-[rtct]
-fun >>(t: TokenType, os: @OutStream)
-    os << (t _asString)
+//[rtct]
+//fun >>(t: TokenType, os: @OutStream)
+//    os << (t _asString)
