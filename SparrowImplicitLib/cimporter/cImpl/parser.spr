@@ -48,7 +48,9 @@ package _Impl
 
         fun accept(this: @SparrowParser, t: TokenType): Bool
             if (*_tokens).type == t
-                _lastToken = (_tokens++)
+                //TODO
+                //_lastToken = (_tokens++)
+                _lastToken ctor (_tokens++)
                 cout << "Accepted " << token_asString(_lastToken.type) << endl
 
                 return true
@@ -317,20 +319,21 @@ package _Impl
             return parseConditionalExpression(this)
         
         fun parseExtDecls(this: @SparrowParser): NodePtr
-            var node = mkExtDecls()
+            var resNodes: NodePtr
 
             while true
                 var type, decl, init: NodePtr
                 var storSpec, typeSpec, typeQual, structDecl: NodePtr
                 
-                if !parseDeclarationSpecifiers(this, storSpec, typeSpec, typeQual, structDecl)
+                if !parseDeclarationSpecifiers(this, storSpec, type, typeQual, structDecl)
                     break
-                
-                type = mkType(_lastToken.loc, typeSpec->kind asStringRef, 
-                    typeSpec->name asStringRef, typeQual)
+               
+                type->children.at(0) = typeQual
+                //type = mkType(_lastToken.loc, typeSpec->kind asStringRef, 
+                //    typeSpec->name asStringRef, typeQual)
                 
                 if structDecl isSet
-                    node = addToNodeList(node, structDecl)
+                    resNodes = addToNodeList(resNodes, structDecl)
 
                 if (this accept tkSEMICOLON)
                     continue
@@ -343,7 +346,7 @@ package _Impl
                     decl->children.at(1) = storSpec
                     decl->children.at(2) = init
                 
-                node = addToNodeList(node, decl)
+                resNodes = addToNodeList(resNodes, decl)
 
                 while this accept tkCOMMA
                     expect(this, parseDeclarator(this, type, decl), "expecting declarator")
@@ -352,11 +355,11 @@ package _Impl
                         decl->children.at(1) = storSpec
                         decl->children.at(2) = init
                     
-                    node = addToNodeList(node, decl)
+                    resNodes = addToNodeList(resNodes, decl)
 
                 this expect tkSEMICOLON
 
-            return node
+            return resNodes
 
         fun parseInitializer(this: @SparrowParser, init: @NodePtr): Bool
             if this accept tkLCURLY
@@ -676,10 +679,12 @@ package _Impl
             var decl: NodePtr
             var storSpec, typeSpec, typeQual, structDecl: NodePtr
 
-            if !parseDeclarationSpecifiers(this, storSpec, typeSpec, typeQual, structDecl)
+            if !parseDeclarationSpecifiers(this, storSpec, type, typeQual, structDecl)
                 return false
-            type = mkType(_lastToken.loc, typeSpec->kind asStringRef, 
-                    typeSpec->name asStringRef, typeQual)
+
+            type->children.at(0) = typeQual
+            //type = mkType(_lastToken.loc, typeSpec->kind asStringRef, 
+            //        typeSpec->name asStringRef, typeQual)
 
             if parseDeclarator(this, type, decl) //|| parseAbstractDeclarator(this))
                 node = decl

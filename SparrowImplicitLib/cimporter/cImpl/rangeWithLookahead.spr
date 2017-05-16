@@ -15,7 +15,9 @@ class RangeWithLookahead(baseRangeType: Type) if Range(#$baseRangeType)
     var buffer: Vector(RetType)
 
     fun ctor(src: baseRangeType)
-        this.source = src
+        //TODO
+        //this.source = src
+        this.source ctor src
         this.buffer ctor
         this.buffer reserve 10
 

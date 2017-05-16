@@ -46,7 +46,7 @@ class Node
         this.loc ctor l
         this.name ctor name
         children ctor r
-        cout << "Parsed: " << kind << endl
+        cout << "Parsed: " << kind << " " << name << endl
 
     fun ctor(l: Location, kind: StringRef, name: StringRef)
         this.kind ctor kind
@@ -58,7 +58,7 @@ class Node
     fun createNode(l: Location, kind: StringRef): NodePtr = new(Node, l, kind)
     fun createNode(l: Location, kind: StringRef, children: Range): NodePtr = new(Node, l, kind, children)
     fun createNode(l: Location, kind: StringRef, children: Range, name: StringRef): NodePtr = new(Node, l, kind, children, name)
-    fun createNode(l: Location, kind: StringRef, name: StringRef): NodePtr = new(Node, l, kind, name)
+    //fun createNode(l: Location, kind: StringRef, name: StringRef): NodePtr = new(Node, l, kind, name)
 
     fun mkType(loc: @Location, declType, type: StringRef, modifier: NodePtr) \
         = createNode(loc, declType, OneNodeRange(modifier), type)
@@ -99,9 +99,6 @@ class Node
         = createNode(loc, "CharLiteral", OneNodeRange(mkIdentifier(loc, data)))
     fun mkStringLiteral(loc: @Location, data: StringRef) \
         = createNode(loc, "StringLiteral", OneNodeRange(mkIdentifier(loc, data)))
-
-    fun mkType(loc: @Location, type: StringRef, node: NodePtr) \
-        = createNode(loc, type, OneNodeRange(node))
 
     fun mkEmpty(loc: @Location) \
         = createNode(loc, "Empty")

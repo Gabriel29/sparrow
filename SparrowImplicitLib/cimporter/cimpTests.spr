@@ -99,5 +99,8 @@ fun test1SprDump
 fun test2SprDump
     var loc: meta.Location = mkLocation()
     var context: meta.CompilationContext
-    //TODO
-    handleCode("/mnt/d/Sparrow/sparrow/SparrowImplicitLib/cimporter/Tests/test1.c", loc, context)
+    handleCCode("
+        int a;
+        void printText();
+        int max(int a, int b);
+        ", loc, context)

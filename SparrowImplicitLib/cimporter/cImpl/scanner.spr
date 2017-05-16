@@ -386,12 +386,15 @@ package _Impl
                 _curToken.data += Char(0)
                 _curToken.floatData = (_curToken.data.asStringRef asDouble)
                 _curToken.data popBack
-                return ife(isLong, tkDOUBLE_LITERAL, tkFLOAT_LITERAL)
+                //return ife(isLong, tkDOUBLE_LITERAL, tkFLOAT_LITERAL)
+                return tkFLOAT_LITERAL
 
             if isUnsigned
-                return ife(isLong, tkUINT_LITERAL, tkUINT_LITERAL)
+                //return ife(isLong, tkUINT_LITERAL, tkUINT_LITERAL)
+                return tkUINT_LITERAL
 
-            return ife(isLong, tkINT_LITERAL, tkINT_LITERAL)
+            //return ife(isLong, tkINT_LITERAL, tkINT_LITERAL)
+            return tkINT_LITERAL
 
         fun getDigitVal(c: Char) = (Int(c) - Int('0'.char))
         fun getXdigitVal(c: Char) = ife(isDigit(c), Int(c) - Int('0'.char), 10 + Int(toLower(c)) - Int('a'.char))

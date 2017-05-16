@@ -17,34 +17,33 @@ package Impl
     [ct]
     fun genCImpSystem(rootNode: NodePtr): meta.AstNode
         var loc: Location
-        var resNodes: Vector(meta.AstNode)
+        var resNodes: Vector(meta.AstNode);
 
         //TODO - Find a way to check for ptr/arrays in AST
-        resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std.ptr"), nullNode, "")
-        resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std.staticArray"), nullNode, "")
+        resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std/ptr.spr"), nullNode, "")
+        resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std/staticArray.spr"), nullNode, "")
 
-        //TODO
         if rootNode isSet
             for node: NodePtr = rootNode->children.all()
-                genNode(node, resNodes)
-
+                resNodes += genExtDecl(node)
         return meta.mkNodeList(loc, resNodes.all)
 
     [ct]
-    fun genNode(node: NodePtr, resNodes: @Vector(meta.AstNode))
+    fun genExtDecl(node: NodePtr): meta.AstNode
         if node->kind == "VarDecl"
-            genVarDecl(node)
+            cout << "Generating VarDecl" << endl
+            return genVarDecl(node)
         else if node->kind == "FunDecl"
-            genFunDecl(node)
-        //else if node.kind == "StructDecl"
+            cout << "Generating FunDecl" << endl
+            return genFunDecl(node)
 
     [ct]
     fun genVarDecl(node: NodePtr): meta.AstNode
         var varDecl: meta.AstNode
         var init = nullNode
-        var type = nullNode
-
+        var type = genType(node->children.at(0))
         varDecl = meta.mkSprVariable(node->loc, node->name asStringRef, type, init)
+
         return varDecl
 
     [ct]
@@ -58,9 +57,19 @@ package Impl
     fun genFunDecl(node: NodePtr): meta.AstNode
         var loc = node->loc
         var name = node->name asStringRef
-        var paramsNode = genFuncParams(node)
+        var paramsNode = genFuncParams(node->children.at(2))
         var body = nullNode
-        var funDecl = meta.mkSprFunction(loc, name, paramsNode, nullNode, body, nullNode);
+        var retType = genType(node->children.at(0))
+        var funDecl = meta.mkSprFunction(loc, name, paramsNode, retType, body, nullNode);
+        
+        // TODO - native modifier
+        /* var mods = meta.mkNodeList(loc, meta.AstNodeRange(), true)
+        var native = meta.mkFunApplication(loc, 
+            meta.mkIdentifier(loc, "native"), 
+            addToNodeList(meta.AstNode(), meta.mkStringLiteral(loc, name))
+            )
+        mods = meta.addToNodeList(mods, native)
+        return meta.mkModifiers(loc, funDecl, mods) */
 
         return funDecl
 
@@ -71,6 +80,7 @@ package Impl
         for param : NodePtr = node->children.all()
             var loc = param->loc
             var name = param->name asStringRef
+            cout << name << endl
             var type = genType(param->children.at(0))
             params = meta.addToNodeList(params, meta.mkSprParameter(loc, name, type, nullNode))
 

@@ -1,4 +1,5 @@
-import cimporter;
-import meta.compiler;
+import cimporter
+import meta.compiler
 
-[ct] var dummyC1 = registerFrontendFun(".h", "cimporter/cImporter.spr:handleCode");
+[ct]
+var dummyC1 = registerFrontendFun(".h", "cimporter/cimporter.spr:handleCCode")
