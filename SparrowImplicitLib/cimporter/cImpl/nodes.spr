@@ -48,17 +48,10 @@ class Node
         children ctor r
         cout << "Parsed: " << kind << " " << name << endl
 
-    fun ctor(l: Location, kind: StringRef, name: StringRef)
-        this.kind ctor kind
-        this.loc ctor l
-        this.name ctor name
-        cout << "Parsed: " << kind << endl
-
 [rtct]
     fun createNode(l: Location, kind: StringRef): NodePtr = new(Node, l, kind)
     fun createNode(l: Location, kind: StringRef, children: Range): NodePtr = new(Node, l, kind, children)
     fun createNode(l: Location, kind: StringRef, children: Range, name: StringRef): NodePtr = new(Node, l, kind, children, name)
-    //fun createNode(l: Location, kind: StringRef, name: StringRef): NodePtr = new(Node, l, kind, name)
 
     fun mkType(loc: @Location, declType, type: StringRef, modifier: NodePtr) \
         = createNode(loc, declType, OneNodeRange(modifier), type)
@@ -68,8 +61,10 @@ class Node
         = createNode(loc, "PtrType", values(node, storage))
     fun mkFunDecl(loc: @Location, name: StringRef, retType, storage, params, body: NodePtr) \
         = createNode(loc, "FunDecl", values(retType, storage, params, body), name)
-    fun mkStructDecl(loc: @Location, type, name: StringRef) \
-        = createNode(loc, type, name)
+
+    fun mkStructDecl(loc: @Location, type, name: StringRef, list: NodePtr) \
+        = createNode(loc, type, OneNodeRange(list), name)
+
     fun mkVarDecl(loc: @Location, name: StringRef, type, storage, init: NodePtr) \
         = createNode(loc, "VarDecl", values(type, storage, init), name)
     fun mkExtDecls() \

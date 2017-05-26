@@ -101,6 +101,6 @@ fun test2SprDump
     var context: meta.CompilationContext
     handleCCode("
         int a;
-        void printText();
+        void printText(char *s);
         int max(int a, int b);
         ", loc, context)

@@ -36,6 +36,9 @@ package Impl
         else if node->kind == "FunDecl"
             cout << "Generating FunDecl" << endl
             return genFunDecl(node)
+        else if node->kind == "StructDecl"
+            cout << "Generating StructDecl" << endl
+            return genStructDecl(node)
 
     [ct]
     fun genVarDecl(node: NodePtr): meta.AstNode
@@ -49,9 +52,15 @@ package Impl
     [ct]
     fun genType(node: NodePtr): meta.AstNode
         var type: meta.AstNode
-        type = meta.mkIdentifier(node->loc, node->name asStringRef)
 
-        return type
+        if node->kind.asStringRef == "PtrType"
+            return meta.mkOperatorCall(node->loc, genType(node->children.at(0)), "Ptr", nullNode)
+        //else if node->kind.asStringRef == "ArrayType"
+        else if node->kind.asStringRef == "PrimitiveType"
+            if node->name.asStringRef == "Void"
+                return meta.mkIdentifier(node->loc, "Byte")
+
+        return meta.mkIdentifier(node->loc, node->name asStringRef)
 
     [ct]
     fun genFunDecl(node: NodePtr): meta.AstNode
@@ -59,7 +68,10 @@ package Impl
         var name = node->name asStringRef
         var paramsNode = genFuncParams(node->children.at(2))
         var body = nullNode
-        var retType = genType(node->children.at(0))
+        var retType = nullNode
+        if node->children.at(0)->name.asStringRef != "Void"
+            retType = genType(node->children.at(0))
+
         var funDecl = meta.mkSprFunction(loc, name, paramsNode, retType, body, nullNode);
         
         // TODO - native modifier
@@ -70,17 +82,18 @@ package Impl
             )
         mods = meta.addToNodeList(mods, native)
         return meta.mkModifiers(loc, funDecl, mods) */
-
         return funDecl
 
     [ct]
     fun genFuncParams(node: NodePtr): meta.AstNode
+        if node->children.size() == 0
+            return meta.AstNode()
+
         var locParams = node->children.at(0)->loc
-        var params = meta.mkNodeList(locParams, meta.AstNodeRange(), true)
+        var params : meta.AstNode
         for param : NodePtr = node->children.all()
             var loc = param->loc
             var name = param->name asStringRef
-            cout << name << endl
             var type = genType(param->children.at(0))
             params = meta.addToNodeList(params, meta.mkSprParameter(loc, name, type, nullNode))
 
@@ -90,12 +103,13 @@ package Impl
     fun genStructDecl(node: NodePtr): meta.AstNode
         var name = node->name asStringRef
         var loc = node->loc
-        var formals = meta.mkNodeList(loc, meta.AstNodeRange(), true)
+        var vars = meta.mkNodeList(loc, meta.AstNodeRange(), true)
 
-        for formal : NodePtr = node->children.all()
-            var loc = formal->loc
-            var name = formal->name asStringRef
-            var type = genType(formal->children.at(0))
-            formals = meta.addToNodeList(formals, meta.mkSprParameter(loc, name, type, nullNode))
+        // TODO - If decls list is empty
+        for v : NodePtr = node->children.at(0)->children.all()
+            var loc = v->loc
+            var name = v->name asStringRef
+            var type = genType(v->children.at(0))
+            vars = meta.addToNodeList(vars, meta.mkSprVariable(loc, name, type, nullNode))
 
-        return meta.mkSprClass(loc, name, formals, nullNode, nullNode, nullNode)
+        return meta.mkSprClass(loc, name, nullNode, nullNode, nullNode, vars)

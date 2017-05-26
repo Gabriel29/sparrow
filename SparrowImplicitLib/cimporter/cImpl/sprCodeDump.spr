@@ -47,8 +47,8 @@ package dumpImpl
             else if node->kind.asStringRef == "VarDecl"
                 dumpVarDecl(os, node)
 
-            else if node->kind.asStringRef == "structDecl"
-               dumpStructDecl(os, node) 
+            else if node->kind.asStringRef == "StructDecl"
+               dumpStructDecl(os, node)
 
             else if node->kind.asStringRef == "FunDecl"
                 dumpFunDecl(os, node)
@@ -57,19 +57,22 @@ package dumpImpl
             printSpaces(os)
             os << "var " << node->name  << ": "
             dumpType(os, node->children.at(0))
-            // TODO Storage
+            // Initializer
             if node->children.at(2) isSet
                 os << " = "
                 dumpExpr(os, node->children.at(2))
             os << endl
+
+            // Storage
 
         fun dumpStructDecl(os: @OutStream, node: NodePtr)
             printSpaces(os)
             os << endl
             os << "datatype " << node->name << endl
             tabs += 1
-            for c : NodePtr = node->children.all()
-                //dumpNode(os, c)
+
+            // TODO - If decls list is empty
+            for c : NodePtr = node->children.at(0)->children.all()
                 printSpaces(os)
                 os << c->name  << ": "
                 dumpType(os, c->children.at(0))

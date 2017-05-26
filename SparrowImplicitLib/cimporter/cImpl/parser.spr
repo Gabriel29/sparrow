@@ -485,10 +485,10 @@ package _Impl
 
             if this accept tkSTRUCT
                 loc = _lastToken.loc
-                typeString = "struct"
+                typeString = "Struct"
             else if this accept tkUNION
                 loc = _lastToken.loc
-                typeString = "union"
+                typeString = "Union"
             else return false
 
             if this accept tkIDENTIFIER
@@ -497,10 +497,13 @@ package _Impl
 
                 if this accept tkLCURLY
                     var item: NodePtr
-                    decl = mkStructDecl(loc, typeString + "Decl", name asStringRef)
+                    var list = NodePtr()
                     while parseStructDeclaration(this, item)
-                        decl = addToNodeList(decl, item)
+                        list = addToNodeList(list, item)
+
                     this expect tkRCURLY
+                    decl = mkStructDecl(loc, typeString + "Decl", name asStringRef, list)
+
             else
                 this expect tkLCURLY
                 this expect tkRCURLY
@@ -558,11 +561,12 @@ package _Impl
                 var loc  = _lastToken.loc
 
                 if this accept tkLCURLY
-                    var item: NodePtr
-                    decl = mkStructDecl(loc, "Enum" + "Decl", name.asStringRef)
+                    var list, item: NodePtr
                     while parseEnumerator(this, item)
-                        decl = addToNodeList(decl, item)
+                        list = addToNodeList(list, item)
+                    
                     this expect tkRCURLY
+                    decl = mkStructDecl(loc, "Enum" + "Decl", name.asStringRef, list)
 
             else 
                 this accept tkLCURLY
