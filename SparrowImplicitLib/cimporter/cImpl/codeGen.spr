@@ -39,13 +39,24 @@ package Impl
         else if node->kind == "StructDecl"
             cout << "Generating StructDecl" << endl
             return genStructDecl(node)
+        else if node->kind == "Typedef"
+            cout << "Generating Typedef" << endl
+            return genTypedef(node)
+
+    [ct]
+    fun genTypedef(node: NodePtr): meta.AstNode
+        var usingDecl: meta.AstNode
+        var type = genType(node->children.at(0))
+        usingDecl = meta.mkSprUsing(node->loc, node->name.asStringRef, type)
+
+        return usingDecl
 
     [ct]
     fun genVarDecl(node: NodePtr): meta.AstNode
         var varDecl: meta.AstNode
         var init = nullNode
         var type = genType(node->children.at(0))
-        varDecl = meta.mkSprVariable(node->loc, node->name asStringRef, type, init)
+        varDecl = meta.mkSprVariable(node->loc, node->name.asStringRef, type, init)
 
         return varDecl
 

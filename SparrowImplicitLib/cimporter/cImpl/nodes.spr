@@ -64,6 +64,8 @@ class Node
 
     fun mkStructDecl(loc: @Location, type, name: StringRef, list: NodePtr) \
         = createNode(loc, type, OneNodeRange(list), name)
+    fun mkTypedef(loc: @Location, name: StringRef, type: NodePtr) \
+        = createNode(loc, "Typedef", OneNodeRange(type), name)
 
     fun mkVarDecl(loc: @Location, name: StringRef, type, storage, init: NodePtr) \
         = createNode(loc, "VarDecl", values(type, storage, init), name)

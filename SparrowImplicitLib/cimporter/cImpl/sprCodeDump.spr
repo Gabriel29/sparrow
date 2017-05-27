@@ -53,6 +53,14 @@ package dumpImpl
             else if node->kind.asStringRef == "FunDecl"
                 dumpFunDecl(os, node)
 
+            else if node->kind.asStringRef == "Typedef"
+                dumpTypedef(os, node)
+
+        fun dumpTypedef(os: @OutStream, node: NodePtr)
+            os << "using " << node->name << " = " 
+            dumpType(os, node->children.at(0))
+            os << endl
+
         fun dumpVarDecl(os: @OutStream, node: NodePtr)
             printSpaces(os)
             os << "var " << node->name  << ": "

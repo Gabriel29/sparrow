@@ -16,3 +16,5 @@ void print_vector(int n, int **v);
 
 int test(int a);
 int* test2(int *a);
+
+typedef int Int2;

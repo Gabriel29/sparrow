@@ -322,13 +322,12 @@ package _Impl
             var resNodes: NodePtr
 
             while true
-                var type, decl, init: NodePtr
-                var storSpec, typeSpec, typeQual, structDecl: NodePtr
+                var decl, init: NodePtr
+                var storSpec, typeSpec, structDecl: NodePtr
                 
-                if !parseDeclarationSpecifiers(this, storSpec, type, typeQual, structDecl)
+                if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl)
                     break
                
-                type->children.at(0) = typeQual
                 //type = mkType(_lastToken.loc, typeSpec->kind asStringRef, 
                 //    typeSpec->name asStringRef, typeQual)
                 
@@ -338,21 +337,21 @@ package _Impl
                 if (this accept tkSEMICOLON)
                     continue
                 
-                expect(this, parseDeclarator(this, type, decl), "expecting declarator")
+                expect(this, parseDeclarator(this, storSpec, typeSpec, decl), "expecting declarator")
                 
                 if this accept tkEQUAL
                     parseInitializer(this, init)
                     // VarDecl Only 
-                    decl->children.at(1) = storSpec
+                    //decl->children.at(1) = storSpec
                     decl->children.at(2) = init
                 
                 resNodes = addToNodeList(resNodes, decl)
 
                 while this accept tkCOMMA
-                    expect(this, parseDeclarator(this, type, decl), "expecting declarator")
+                    expect(this, parseDeclarator(this, storSpec, typeSpec, decl), "expecting declarator")
                     if this accept tkEQUAL
                         parseInitializer(this, init)
-                        decl->children.at(1) = storSpec
+                        //decl->children.at(1) = storSpec
                         decl->children.at(2) = init
                     
                     resNodes = addToNodeList(resNodes, decl)
@@ -396,7 +395,9 @@ package _Impl
         */
 
         fun parseDeclarationSpecifiers(this: @SparrowParser, \
-                storSpec, typeSpec, typeQual, structDecl: @NodePtr): Bool
+                storSpec, typeSpec, structDecl: @NodePtr): Bool
+            var typeQual: NodePtr
+
             if !( parseStorageClassSpecifier(this, storSpec)
                     || parseTypeSpecifier(this, typeSpec)
                     || parseTypeQualifier(this, typeQual)
@@ -414,24 +415,28 @@ package _Impl
                     )
                     break;
 
-            ///node = mkPrimitiveType(_lastToken.loc, "Typedef")
+            typeSpec->children.at(0) = typeQual
             return true
 
-        fun parseStorageClassSpecifier(this: @SparrowParser, list: @NodePtr): Bool
+        fun parseStorageClassSpecifier(this: @SparrowParser, storSpec: @NodePtr): Bool
+            if storSpec isSet
+                // Expecting only 1 StorageClassSpecifier
+                return false
+
             if this accept tkTYPEDEF
-                list = addToNodeList(list, new(Node, _lastToken.loc, "Typedef"))
+                storSpec = mkIdentifier(_lastToken.loc, "Typedef")
                 return true
             if this accept tkEXTERN
-                list = addToNodeList(list, new(Node, _lastToken.loc, "Extern"))
+                storSpec = mkIdentifier(_lastToken.loc, "Extern")
                 return true
             if this accept tkSTATIC
-                list = addToNodeList(list, new(Node, _lastToken.loc, "Static"))
+                storSpec = mkIdentifier(_lastToken.loc, "Static")
                 return true
             if this accept tkAUTO
-                list = addToNodeList(list, new(Node, _lastToken.loc, "Auto"))
+                storSpec = mkIdentifier(_lastToken.loc, "Auto")
                 return true
             if this accept tkREGISTER
-                list = addToNodeList(list, new(Node, _lastToken.loc, "Register"))
+                storSpec = mkIdentifier(_lastToken.loc, "Register")
                 return true
 
             return false
@@ -545,7 +550,7 @@ package _Impl
             return true
 
         fun parseStructDeclarator(this: @SparrowParser, type, res: @NodePtr): Bool
-            if !parseDeclarator(this, type, res)
+            if !parseDeclarator(this, NodePtr(), type, res)
                 return false
 
             //TODO CONSTANT_EXPRESSION
@@ -591,29 +596,30 @@ package _Impl
             decl = mkIdentifier(loc, name.asStringRef)
             return true
 
-        fun parseDeclarator(this: @SparrowParser, type, res: @NodePtr): Bool
-            var directDecl: NodePtr
-            var newType: NodePtr = type
-
-            parsePointer(this, newType)
-            if !parseDirectDeclarator(this, newType, directDecl)
+        fun parseDeclarator(this: @SparrowParser, storSpec, typeSpec, res: @NodePtr): Bool
+            parsePointer(this, typeSpec)
+            if !parseDirectDeclarator(this, storSpec, typeSpec, res)
                 return false
             
-            res = directDecl
             return true
 
-        fun parseDirectDeclarator(this: @SparrowParser, type, res: @NodePtr): Bool
+        fun parseDirectDeclarator(this: @SparrowParser, storSpec, typeSpec, res: @NodePtr): Bool
             var name: String
             var loc: Location
             var isFunc: Bool = false
             var params: NodePtr
-            var storage, init: NodePtr
+            var init: NodePtr
 
             // Get Var/Func Name    
             if this accept tkIDENTIFIER
                 name ctor _lastToken.data
                 loc = _lastToken.loc
             else return false
+
+            if storSpec isSet
+                if storSpec->kind.asStringRef == "Typedef"
+                    res = mkTypedef(loc, name.asStringRef, typeSpec)
+                    return true
 
             // TODO CAST
             /* '(' declarator ')' */
@@ -628,7 +634,7 @@ package _Impl
                 if this accept tkLBRACKET
                     this expect tkRBRACKET
                     var size: NodePtr
-                    type = mkArrayType(_lastToken.loc, type, size)
+                    typeSpec = mkArrayType(_lastToken.loc, typeSpec, size)
                 
                 else if this accept tkLPAREN
                     isFunc = true
@@ -643,13 +649,13 @@ package _Impl
 
                 else break
 
-            if !isFunc ; res = mkVarDecl(loc, name.asStringRef, type, storage, init)
-            else res = mkFunDecl(loc, name.asStringRef, type, storage, params, NodePtr())
+            if !isFunc ; res = mkVarDecl(loc, name.asStringRef, typeSpec, storSpec, init)
+            else res = mkFunDecl(loc, name.asStringRef, typeSpec, storSpec, params, NodePtr())
 
             return true
         
         
-        fun parsePointer(this: @SparrowParser, type: @NodePtr): Bool
+        fun parsePointer(this: @SparrowParser, typeSpec: @NodePtr): Bool
             if !(this nextIs tkMUL)
                 return false
 
@@ -657,7 +663,7 @@ package _Impl
                 var typeQual: NodePtr
                 while true 
                     if !parseTypeQualifier(this, typeQual) ; break
-                type = mkPtrType(_lastToken.loc, type, typeQual)
+                typeSpec = mkPtrType(_lastToken.loc, typeSpec, typeQual)
 
             return true
         
@@ -679,20 +685,19 @@ package _Impl
 
         fun parseParameterDeclaration(this: @SparrowParser, node: @NodePtr): Bool
             var res: Bool
-            var type: NodePtr
             var decl: NodePtr
-            var storSpec, typeSpec, typeQual, structDecl: NodePtr
+            var storSpec, typeSpec, structDecl: NodePtr
 
-            if !parseDeclarationSpecifiers(this, storSpec, type, typeQual, structDecl)
+            if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl)
                 return false
 
-            type->children.at(0) = typeQual
+            //type->children.at(0) = typeQual
             //type = mkType(_lastToken.loc, typeSpec->kind asStringRef, 
             //        typeSpec->name asStringRef, typeQual)
 
-            if parseDeclarator(this, type, decl) //|| parseAbstractDeclarator(this))
+            if parseDeclarator(this, storSpec, typeSpec, decl) //|| parseAbstractDeclarator(this))
                 node = decl
-            else node = type
+            else node = typeSpec
             
             return true
         
