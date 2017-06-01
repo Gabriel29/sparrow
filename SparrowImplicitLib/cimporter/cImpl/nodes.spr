@@ -80,6 +80,11 @@ class Node
     fun mkUnaryExpr(loc: @Location, expr: NodePtr, op: StringRef) \
         = createNode(loc, "Unary", OneNodeRange(expr), op)
 
+    fun mkParenthesisExpr(loc: @Location, expr: NodePtr) \
+        = createNode(loc, "ParenthesisExpr", OneNodeRange(expr))
+    fun mkEnumerator(loc: @Location, name: StringRef, init: NodePtr) \
+        = createNode(loc, "Enumerator", OneNodeRange(init), name)
+
     fun mkIntLiteral(loc: @Location, val: ULong) \
         = createNode(loc, "IntLiteral", OneNodeRange(mkIdentifier(loc, toString(val) asStringRef)))
     fun mkUIntLiteral(loc: @Location, val: ULong) \

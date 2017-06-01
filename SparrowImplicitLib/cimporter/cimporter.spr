@@ -54,3 +54,28 @@ fun generateSparrowFromC(filename, code: StringRef): String
 
     dumpCode(ss, rootNode)
     return ss.result
+
+class CString
+    var begin: @Byte
+    var alloc: Bool
+
+    fun ctor(ref: StringRef)
+        this.begin := malloc(ref.size + 1)
+        memcpy(this.begin, ref.begin, ref.size)
+        var end: @Byte = ptrAdd(this.begin, ref.size)
+        end = Byte(0)
+        this.alloc = true
+
+    fun ctor(str: @String)
+        var ref = str.asStringRef
+        this.begin := ref.begin
+        this.alloc = false
+    
+    fun front: @Char = reinterpretCast(@Char, begin)
+    fun release
+        if alloc ; begin.free
+
+fun zeroTermString(ref: StringRef): CString
+    var c: CString
+    c.begin := ref.begin
+    c.alloc = false
