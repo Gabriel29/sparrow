@@ -32,6 +32,11 @@ using parseHeader = _Impl.parseHeader
 
 package _Impl
     [rtct]
+        // TypeName List
+        var _ignore: Bool
+        var _typeNameList: Vector(String)
+        var _typeNameListIgnore: Vector(String)
+
         fun reportError(this: @SparrowParser, msg: StringRef)
             // Report the error
             _errorReporter.reportError((*_tokens).loc, msg)
@@ -45,13 +50,30 @@ package _Impl
 
         fun nextIs(this: @SparrowParser, t: TokenType): Bool = (*_tokens).type == t
         fun next2Is(this: @SparrowParser, t: TokenType): Bool = (_tokens peek 1).type == t
+        fun nextNIs(this: @SparrowParser, t: TokenType, n: Int): Bool = (_tokens peek n).type == t
+
+        fun nextIsTypeName(this: @SparrowParser): Bool
+            if (*_tokens).type == tkIDENTIFIER
+                for name: String = _typeNameList.all()
+                    if name == (*_tokens).data
+                        return true
+
+            return false
+
+        fun nextIsTypeNameIgnore(this: @SparrowParser): Bool
+            if (*_tokens).type == tkIDENTIFIER
+                for name: String = _typeNameListIgnore.all()
+                    if name == (*_tokens).data
+                        _ignore = true
+                        return true
+            return false
 
         fun accept(this: @SparrowParser, t: TokenType): Bool
             if (*_tokens).type == t
                 //TODO
                 //_lastToken = (_tokens++)
                 _lastToken ctor (_tokens++)
-                cout << "Accepted " << token_asString(_lastToken.type) << endl
+                //cout << "Accepted " << token_asString(_lastToken.type) << endl
 
                 return true
             return false
@@ -80,14 +102,29 @@ package _Impl
 
             return res
 
+        fun doWorkAround(this: @SparrowParser, resNodes: @NodePtr)
+            // Workaround from size_t
+            var loc: Location
+            var ttt = mkType(_lastToken.loc, "PrimitiveType", "Int", NodePtr())
+            var size_t = mkTypedef(loc, "size_t", ttt)
+            resNodes = addToNodeList(resNodes, size_t)
+            _typeNameList += String("size_t")
+
+            _typeNameListIgnore += String("FILE")
+            _typeNameListIgnore += String("va_list")
+
         fun parseExtDecls(this: @SparrowParser): NodePtr
             var resNodes: NodePtr
 
+            doWorkAround(this, resNodes)
+
             while true
+                _ignore = false
+
                 var decl, init, body: NodePtr
-                var storSpec, typeSpec, structDecl: NodePtr
+                var storSpec, typeSpec, structDecl, funcSpec: NodePtr
                 
-                if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl)
+                if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl, funcSpec)
                     break
                 
                 // Add structure declaration to ExtDecls
@@ -100,9 +137,13 @@ package _Impl
                 expect(this, parseDeclarator(this, storSpec, typeSpec, decl), "expecting declarator")
                 
                 // Parse Function Body
-                parseCompoundStmt(this, body)
+                var s = parseCompoundStmt(this, body)
                 if body isSet
                     decl->children.at(3) = body
+                    continue
+
+                if s == true
+                    decl->kind = String("skipMe")
                     continue
 
                 // Parse Variable initializer
@@ -319,9 +360,9 @@ package _Impl
             //    continue
 
             if !parseConditionalExpression(this, init)
-                return true
+                return false
 
-            return false
+            return true
 
         fun parseAssignmentOperator(this: @SparrowParser): Bool
             if this accept tkEQUAL
@@ -389,7 +430,7 @@ package _Impl
 
 
         fun parseDeclarationSpecifiers(this: @SparrowParser, \
-                storSpec, typeSpec, structDecl: @NodePtr): Bool
+                storSpec, typeSpec, structDecl, funcSpec: @NodePtr): Bool
             var typeQual: NodePtr
 
             if !( parseStorageClassSpecifier(this, storSpec)
@@ -397,6 +438,7 @@ package _Impl
                     || parseTypeQualifier(this, typeQual)
                     || parseStructOrUnionSpecifier(this, typeSpec, structDecl) 
                     || parseEnumSpecifier(this, typeSpec, structDecl)
+                    || parseFunctionSpecifier(this, funcSpec)
                     )
                 return false
 
@@ -406,11 +448,49 @@ package _Impl
                     || parseTypeQualifier(this, typeQual)
                     || parseStructOrUnionSpecifier(this, typeSpec, structDecl) 
                     || parseEnumSpecifier(this, typeSpec, structDecl)
+                    || parseFunctionSpecifier(this, funcSpec)
                     )
                     break;
 
             typeSpec->children.at(0) = typeQual
             return true
+
+        fun isTypeSpecifier(this: @SparrowParser, n: Int): Bool
+            if ( nextNIs(this, tkVOID, n)
+              || nextNIs(this, tkCHAR, n)
+              || nextNIs(this, tkSHORT, n)
+              || nextNIs(this, tkINT, n)
+              || nextNIs(this, tkLONG, n)
+              || nextNIs(this, tkFLOAT, n)
+              || nextNIs(this, tkDOUBLE, n)
+              || nextNIs(this, tkSIGNED, n)
+              || nextNIs(this, tkUNSIGNED, n)
+              || nextNIs(this, tkIDENTIFIER, n) // TYPENAME
+              )
+                return true
+            return false
+        fun isStorageClassSpecifier(this: @SparrowParser, n: Int): Bool
+            if ( nextNIs(this, tkTYPEDEF, n)
+              || nextNIs(this, tkEXTERN, n)
+              || nextNIs(this, tkSTATIC, n)
+              || nextNIs(this, tkAUTO, n)
+              || nextNIs(this, tkREGISTER, n)
+              )
+                return true
+            return false
+        fun isTypeQualifier(this: @SparrowParser, n: Int): Bool
+            if ( nextNIs(this, tkCONST, n)
+              || nextNIs(this, tkVOLATILE, n)
+              )
+                return true
+            return false
+
+        fun parseFunctionSpecifier(this: @SparrowParser, funcSpec: @NodePtr): Bool
+            if this accept tkINLINE
+                funcSpec = mkIdentifier(_lastToken.loc, "inline")
+                return true
+
+            return false
 
         fun parseStorageClassSpecifier(this: @SparrowParser, storSpec: @NodePtr): Bool
             if this accept tkTYPEDEF
@@ -459,9 +539,19 @@ package _Impl
             if this accept tkUNSIGNED
                 type = mkType(_lastToken.loc, "PrimitiveType", "Unsigned", NodePtr())
                 return true
-            if this accept tkTYPE_NAME
-                type = mkType(_lastToken.loc, "PrimitiveType", "TypeName", NodePtr())
+            //if this accept tkTYPE_NAME
+            if this nextIsTypeName
+                this accept tkIDENTIFIER
+                type = mkType(_lastToken.loc, "PrimitiveType", _lastToken.data.asStringRef, NodePtr())
+                //type = mkIdentifier(_lastToken.loc, _lastToken.data.asStringRef)
                 return true
+
+            if this nextIsTypeNameIgnore
+                this accept tkIDENTIFIER
+                type = mkType(_lastToken.loc, "PrimitiveType", _lastToken.data.asStringRef, NodePtr())
+                //type = mkIdentifier(_lastToken.loc, _lastToken.data.asStringRef)
+                return true
+
             return false
         
         fun parseTypeQualifier(this: @SparrowParser, list: @NodePtr): Bool
@@ -501,8 +591,8 @@ package _Impl
 
             else if this accept tkLCURLY
                 var name: String = "struct"
-                name = name + String(_lastToken.loc.start.line) + String(_lastToken.loc.start.col)
-
+                name = name + ulongToString(_lastToken.loc.start.line) + ulongToString(_lastToken.loc.start.col)
+                //cout << name << endl << endl
                 type = mkType(_lastToken.loc, typeString + "Type", name asStringRef, NodePtr())
                 var list = NodePtr()
                 while true
@@ -554,11 +644,14 @@ package _Impl
             typeSpec->children.at(0) = typeQual
             return true
 
-        // TODO
         fun parseStructDeclarator(this: @SparrowParser, type, res: @NodePtr): Bool
-            var decl = parseDeclarator(this, NodePtr(), type, res)
-            var const = parseConstantExpression(this, res)
+            var decl, const: Bool
+            decl = parseDeclarator(this, NodePtr(), type, res)
+            
+            if this accept tkCOLON
+                const = parseConstantExpression(this, res)
 
+            // TODO
             return (decl || const)
 
         fun parseEnumSpecifier(this: @SparrowParser, type, decl: @NodePtr): Bool
@@ -583,7 +676,7 @@ package _Impl
 
             else if this accept tkLCURLY
                 var name: String = "enum"
-                name + String(_lastToken.loc.start.line) + String(_lastToken.loc.start.col)
+                name = name + ulongToString(_lastToken.loc.start.line) + ulongToString(_lastToken.loc.start.col)
                 type = mkType(_lastToken.loc, "Enum" + "Type", name asStringRef, NodePtr())
 
                 var list, item: NodePtr
@@ -593,7 +686,6 @@ package _Impl
                     parseEnumerator(this, item)
                     list = addToNodeList(list, item)
                 
-                this expect tkRCURLY
                 decl = mkStructDecl(loc, "Enum" + "Decl", name.asStringRef, list)
                 this expect tkRCURLY
 
@@ -623,6 +715,7 @@ package _Impl
             return true
 
         fun parseDirectDeclarator(this: @SparrowParser, storSpec, typeSpec, res: @NodePtr): Bool
+            var identif: Token
             var name: String
             var loc: Location
             var isFunc: Bool = false
@@ -631,49 +724,103 @@ package _Impl
 
             // Get Var/Func Name    
             if this accept tkIDENTIFIER
+                identif = _lastToken
                 name ctor _lastToken.data
                 loc = _lastToken.loc
+            
+            /* '(' declarator ')' */
+            else if ((this nextIs tkLPAREN) && (this next2Is tkMUL))
+                this accept tkLPAREN
+                //expect(this, parseDeclarator(this, storSpec, typeSpec, res), "expecting declarator")
+                this expect tkMUL
+                this expect tkIDENTIFIER
+                identif = _lastToken
+                this expect tkRPAREN
+
+                _typeNameListIgnore += identif.data
+
             else return false
 
-            if storSpec isSet
-                if storSpec->kind.asStringRef == "Typedef"
-                    res = mkTypedef(loc, name.asStringRef, typeSpec)
-                    return true
-
-            // TODO CAST
-            /* '(' declarator ')' */
-            /*
-            else if this accept tkLPAREN
-                res = true
-                expect(this, parseDeclarator(this), "expecting declarator")
-                this expect tkRPAREN
-            */
-
             while true
+                // ParserArrayType
+                if this nextIs tkLBRACKET
+                    parseArrayType(this, typeSpec)
+
+                /*
                 if this accept tkLBRACKET
                     this expect tkRBRACKET
                     var size: NodePtr
                     typeSpec = mkArrayType(_lastToken.loc, typeSpec, size)
-                
+                */
+
                 else if this accept tkLPAREN
                     isFunc = true
+                    params = NodePtr()
                     if this accept tkRPAREN
-                        params = mkEmpty(_lastToken.loc)
                         continue
                     
-                    expect(this, (parseIdentifierList(this)
-                                 || parseParameterList(this, params)
+                    expect(this, (parseParameterList(this, params)
+                                 || parseIdentifierList(this)
                                  ), "expecting IdentifList or ParameterList")
                     this expect tkRPAREN
 
                 else break
 
+            if storSpec isSet
+                if storSpec->kind.asStringRef == "Typedef"
+                    // TODO
+                    if isFunc
+                        res = mkFunDecl(loc, name.asStringRef, typeSpec, storSpec, params, NodePtr())
+                        res->kind = String("skipThis")
+                        return true
+
+                    _typeNameList += name
+                    res = mkTypedef(loc, name.asStringRef, typeSpec)
+                    return true
+
             if !isFunc ; res = mkVarDecl(loc, name.asStringRef, typeSpec, storSpec, init)
             else res = mkFunDecl(loc, name.asStringRef, typeSpec, storSpec, params, NodePtr())
 
+            if _ignore
+                res->kind = String("skipThis")
+
             return true
         
-        
+        fun parseArrayType(this: @SparrowParser, typeSpec: @NodePtr)
+            var size, listQual: NodePtr
+            this accept tkLBRACKET
+
+            if this nextIs tkRBRACKET
+                // Nothing to DO
+
+            else if this accept tkMUL
+                //size = mkType(_lastToken.loc, )
+
+            else if this accept tkSTATIC
+                expect(this, isTypeQualifier(this, 0), "expecting typeQual")
+                parseTypeQualifierList(this, listQual)
+                expect(this, parseAssignmentExpression(this, size), "expecting assignmentExpression")
+
+            else if isTypeQualifier(this, 0)
+                parseTypeQualifierList(this, listQual)
+                if this nextIs tkRBRACKET
+                    // Nothing to DO
+                else if this accept tkMUL
+                    // size = 
+                else
+                    expect(this, parseAssignmentExpression(this, size), "assignment")
+
+            else
+                expect(this, parseAssignmentExpression(this, size), "expecting assignment")
+
+            this expect tkRBRACKET
+            typeSpec = mkArrayType(_lastToken.loc, typeSpec, listQual, size)
+
+        fun parseTypeQualifierList(this: @SparrowParser, list: @NodePtr)
+            var qual: NodePtr
+            while parseTypeQualifier(this, qual)
+                list = addToNodeList(list, qual)
+
         fun parsePointer(this: @SparrowParser, typeSpec: @NodePtr): Bool
             if !(this nextIs tkMUL)
                 return false
@@ -692,9 +839,16 @@ package _Impl
             if !parseParameterDeclaration(this, parameter)
                 return false
 
+            //TODO
+            if (parameter->kind.asStringRef == "PrimitiveType" 
+             && parameter->name.asStringRef == "Void"
+             )
+                return true
+
             res = addToNodeList(res, parameter)
             while this accept tkCOMMA
                 if this accept tkELLIPSIS
+                    _ignore = true
                     res = addToNodeList(res, mkIdentifier(_lastToken.loc, "ellipsis"))
                     break
                 expect(this, parseParameterDeclaration(this, parameter), "expecting ellipsis or paramDeclaration")
@@ -705,9 +859,9 @@ package _Impl
         fun parseParameterDeclaration(this: @SparrowParser, node: @NodePtr): Bool
             var res: Bool
             var decl: NodePtr
-            var storSpec, typeSpec, structDecl: NodePtr
+            var storSpec, typeSpec, structDecl, funcSpec: NodePtr
 
-            if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl)
+            if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl, funcSpec)
                 return false
 
             if parseDeclarator(this, storSpec, typeSpec, decl) //|| parseAbstractDeclarator(this))
@@ -730,20 +884,21 @@ package _Impl
 
             return true
 
-        fun parseTypeName(this: @SparrowParser): Bool
-            var res: Bool
-            if !parseSpecifierQualifierList(this)
+        fun parseTypeName(this: @SparrowParser, res: @NodePtr): Bool
+            var decl, typeSpec, structDecl: NodePtr
+            if !parseSpecifierQualifierList(this, typeSpec, structDecl)
                 return false
-            parseAbstractDeclarator(this)
+
+            //parseAbstractDeclarator(this)
 
             return true
 
-        fun parseAbstractDeclarator(this: @SparrowParser): Bool
-            var res: Bool
-            //res = parsePointer(this)
-            parseDirectAbstractDeclarator(this)
+        fun parseAbstractDeclarator(this: @SparrowParser, typeSpec: @NodePtr): Bool
+            parsePointer(this, typeSpec)
+            if !parseDirectAbstractDeclarator(this, typeSpec)
+                return false
 
-            return res
+            return true
         
         //TODO
         fun parseDirectAbstractDeclarator(this: @SparrowParser): Bool
@@ -794,22 +949,21 @@ package _Impl
 
 
         fun parseStmt(this: @SparrowParser, res: NodePtr): Bool
-            return false
-            /*if !(  parseLabeledStmt(this, res)
-                || parseCompoundStmt(this, res)
-                || parseSelectionStmt(this, res)
-                || parseIterationStmt(this, res)
-                || parseJumpStmt(this, res)
-                || parseExprStmtOpt(this, res)
+            if !(parseLabeledStmt(this, res)   ||
+                 parseCompoundStmt(this, res)  ||
+                 parseSelectionStmt(this, res) ||
+                 parseIterationStmt(this, res) ||
+                 parseJumpStmt(this, res)      ||
+                 parseExpressionStmt(this, res)
                 )
                 return false
             
-            return true*/
+            return true
         
         fun parseDeclaration(this: @SparrowParser, decl: @NodePtr): Bool
-            var storSpec, typeSpec, structDecl: NodePtr
+            var storSpec, typeSpec, structDecl, funcSpec: NodePtr
             
-            if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl)
+            if !parseDeclarationSpecifiers(this, storSpec, typeSpec, structDecl, funcSpec)
                 return false
             
             //if structDecl isSet
@@ -835,10 +989,23 @@ package _Impl
             this expect tkSEMICOLON
             return true
         
+        fun consumeTokens(this: @SparrowParser)
+            var paren = 1
+            while paren > 0
+                if (*_tokens).type == tkLCURLY
+                    paren++
+                else if (*_tokens).type == tkRCURLY
+                    paren--
+                _tokens++
+
 
         fun parseCompoundStmt(this: @SparrowParser, res: @NodePtr): Bool
             var res: NodePtr
             if this accept tkLCURLY
+                /////////////////
+                consumeTokens(this)
+                return true
+
                 if this accept tkRCURLY
                     return true
                 else
@@ -863,29 +1030,20 @@ package _Impl
 
             return true
 
-        //TODO
-        fun parseExprStmtOpt(this: @SparrowParser): Bool
-            var res: Bool
 
+        fun parseExpressionStmt(this: @SparrowParser, res: @NodePtr): Bool
             if this accept tkSEMICOLON
                 return true
 
-            if parseExpression(this)
+            if parseExpression(this, res)
                 this expect tkSEMICOLON
                 return true
 
             return false
 
-        fun parseExprStmt(this: @SparrowParser): Bool
-            var res: Bool
-            res = parseExprStmt(this)
-            if(res == true)
-                return res
-
-            this reportError toString("Syntax error, unexpected ", (*_tokens).type, ", expecting parseInitializerList")
-
-        fun parseLabeledStmt(this: @SparrowParser): Bool
-            var res: Bool
+        fun parseLabeledStmt(this: @SparrowParser, res: @NodePtr): Bool
+            // TODO
+            /*
             if this nextIs tkIDENTIFIER && next2Is tkCOLON
                 this accept tkIDENTIFIER
                 this accept tkCOLON
@@ -899,89 +1057,109 @@ package _Impl
             else if this accept tkDEFAULT
                 this expect tkCOLON
                 res = parseStmt(this)
+            */
 
-            else
-                res = false
+            return false
+            
 
-            return res
-
-        fun parseSelectionStmt(this: @SparrowParser): Bool
+        fun parseSelectionStmt(this: @SparrowParser, res: @NodePtr): Bool
             if this accept tkIF
+                var loc = _lastToken.loc
+                var expr, thenClause, elseClause: NodePtr
                 this expect tkLPAREN
-                expect(this, parseExpression(this), "Expecting expression")
+                expect(this, parseExpression(this, expr), "Expecting expression")
                 this expect tkRPAREN
-                expect(this, parseStmt(this), "Expecting parseStmt")
+                expect(this, parseStmt(this, thenClause), "Expecting parseStmt")
 
                 if this accept tkELSE
-                    expect(this, parseStmt(this), "Expecting parseStmt")
+                    expect(this, parseStmt(this, elseClause), "Expecting parseStmt")
 
+                res = mkIfStmt(loc, expr, thenClause, elseClause)
                 return true
 
+            //TODO
+            /*
             if this accept tkSWITCH
                 this expect tkLPAREN
                 expect(this, parseExpression(this), "Expecting expression")
                 this expect tkRPAREN
                 expect(this, parseStmt(this), "Expecting parseStmt")
                 return true
+            */
 
             return false
 
-        //TODO
-        fun parseIterationStmt(this: @SparrowParser): Bool
+        fun parseIterationStmt(this: @SparrowParser, res: @NodePtr): Bool
             if this accept tkWHILE
+                var loc = _lastToken.loc
+                var expr, body: NodePtr
                 this expect tkLPAREN
-                expect(this, parseExpression(this), "Expecting parseExpr")
+                expect(this, parseExpression(this, expr), "Expecting parseExpr")
                 this expect tkRPAREN
-                expect(this, parseStmt(this), "Expecting parseStmt")
+                expect(this, parseStmt(this, body), "Expecting parseStmt")
+
+                res = mkWhileStmt(loc, expr, body)
                 return true
 
             if this accept tkDO
-                expect(this, parseStmt(this), "Expecting parseStmt")
+                var loc = _lastToken.loc
+                var expr, body: NodePtr
+                expect(this, parseStmt(this, body), "Expecting parseStmt")
+                this expect tkWHILE
                 this expect tkLPAREN
-                expect(this, parseExpression(this), "Expecting parseExpr")
+                expect(this, parseExpression(this, expr), "Expecting parseExpr")
                 this expect tkRPAREN
                 this expect tkSEMICOLON
+
+                res = mkDoWhileStmt(loc, expr, body)
                 return true
 
-            //TODO
-            /*
             if this accept tkFOR
+                var loc = _lastToken.loc
+                var expr, body: NodePtr
                 this expect tkLPAREN
-                parseExprStmt(this)
-                parseExprStmt(this)
+                //parseDeclaration(this, expr)
+                parseExpressionStmt(this, expr)
+                parseExpressionStmt(this, expr)
                 if this accept tkRPAREN
-                    parseStmt(this)
+                    //parseStmt(this)
                     return true
                 else
-                    parseExpression(this)
+                    parseExpressionStmt(this, expr)
                     this expect tkLPAREN
-                    parseStmt(this)
+                    //parseStmt(this)
                     return true
                 return true
-            */
 
-            return false;
+            return false
 
-        fun parseJumpStmt(this: @SparrowParser): Bool
+        fun parseJumpStmt(this: @SparrowParser, res: @NodePtr): Bool
+            //TODO
             if this accept tkGOTO
                 this expect tkIDENTIFIER
                 this expect tkSEMICOLON
                 return true
 
             else if this accept tkCONTINUE
+                res = mkContinueStmt(_lastToken.loc)
                 this expect tkSEMICOLON
                 return true
 
             else if this accept tkBREAK
+                res = mkBreakStmt(_lastToken.loc)
                 this expect tkSEMICOLON
                 return true
 
             else if this accept tkRETURN
+                var loc = _lastToken.loc
+                var expr: NodePtr
                 if this accept tkSEMICOLON
-                    return true
+                    res = mkReturnStmt(loc, expr)
                 else
-                    expect(this, parseExpression(this), "Expecting parseExpr")
-                this expect tkSEMICOLON
+                    expect(this, parseExpression(this, expr), "Expecting parseExpr")
+                    this expect tkSEMICOLON
+
+                    res = mkReturnStmt(loc, expr)
                 return true
 
             return false

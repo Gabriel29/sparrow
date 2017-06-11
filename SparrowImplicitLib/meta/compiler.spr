@@ -1,6 +1,8 @@
 [public] import compilerCore
 
 [ct]
+    [native("$meta.Compiler.registerFrontendFun2")]
+    fun registerFrontendFun2(ext, funName: StringRef): Bool
     [native("$meta.Compiler.registerFrontendFun")]
     fun registerFrontendFun(ext, funName: StringRef): Bool
     [native("$meta.Compiler.parseSprExpression")]

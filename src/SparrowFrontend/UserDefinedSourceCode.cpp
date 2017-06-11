@@ -136,6 +136,69 @@ namespace
         sourceCode->mainNode = moduleContent;
     }
 
+    void parseSourceCode2(SourceCode* sourceCode, CompilationContext* ctx)
+    {
+        Location loc = Nest_mkLocation1(sourceCode, 1,1);
+
+        ostringstream oss;
+        oss << sourceCode->url;
+        
+        // Create a package for the module
+        StringRef packageName = inferModuleName(sourceCode->url);
+        Node* content = Feather_mkNodeListVoid(loc, fromIniList({}));
+        Node* moduleContent = mkSprPackage(loc, packageName, content);
+        Nest_setContext(moduleContent, ctx);
+        if ( !Nest_semanticCheck(moduleContent) )
+            REP_INTERNAL(loc, "Cannot create main package for user defined source code (%1%)") % sourceCode->url;
+
+        ctx = content->context;
+
+        // Create a node that invokes the given function with the content of the file
+        // funName(code: StringRef, location: meta.Location, context: meta.CompilationContext): meta.AstNode
+        Node* codeNode = buildStringLiteral(loc, fromString(oss.str()));
+
+        Node* scNode = buildLiteral(loc, fromCStr("SourceCode"), sourceCode);
+        Node* locBase = mkIdentifier(loc, fromCStr("mkLocation"));
+        Node* locNode = mkFunApplication(loc, locBase, fromIniList({scNode}));
+
+        Node* ctxNode = buildLiteral(loc, fromCStr("CompilationContext"), ctx);
+
+
+        // Parse the extraInfo to find out the import and the function to call
+        Node* toImport;
+        Node* toCall;
+        const char* funInfo = Nest_getSourceCodeExtraInfo(sourceCode->kind);
+        tie(toImport, toCall) = parseFunToCall(loc, funInfo);
+
+        // If provided, add an import, to make sure we can find the function to call
+        if ( toImport ) {
+            // Just add the import node to the right context, and semantically check it
+            Node* importName = mkImportName(loc, toImport, nullptr);
+
+            // Make sure to semantically check it; expanding the source code depends on it
+            Nest_setContext(importName, ctx);
+            Nest_semanticCheck(importName);
+            Feather_addToNodeList(content, importName);
+        }
+
+        if ( !toCall )
+            REP_INTERNAL(loc, "Invalid parsing function '%1%', (used to parse %2%)") % funInfo % sourceCode->url;
+
+        Node* funCall = mkFunApplication(loc, toCall, fromIniList({codeNode, locNode, ctxNode}));
+
+        // Compile the function and evaluate it
+        Node* implPart = mkCompoundExp(loc, funCall, fromCStr("data"));
+        implPart = Feather_mkMemLoad(loc, implPart);    // Remove LValue
+        Nest_setContext(implPart, ctx);
+        if ( !Nest_semanticCheck(implPart) )
+            REP_INTERNAL(loc, "Invalid parsing function '%1%', (used to parse %2%)") % funInfo % sourceCode->url;
+
+        Feather_addToNodeList(content, (Node*) getByteRefCtValue(implPart));
+
+        Nest_semanticCheck(moduleContent);
+        sourceCode->mainNode = moduleContent;
+    }
+
     StringRef getSourceCodeLine(const SourceCode* sourceCode, int lineNo)
     {
         StringRef res {NULL, NULL};
@@ -162,4 +225,11 @@ int SprFe_registerUserDefinedSourceCode(const char* ext, const char* funName)
     return Nest_registerSourceCodeKind(ext,
         "Source file registered by the user from library code", funName,
         &parseSourceCode, &getSourceCodeLine, NULL);
+}
+
+int SprFe_registerUserDefinedSourceCode2(const char* ext, const char* funName)
+{
+    return Nest_registerSourceCodeKind(ext,
+        "Source file registered by the user from library code", funName,
+        &parseSourceCode2, &getSourceCodeLine, NULL);
 }

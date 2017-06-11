@@ -46,15 +46,29 @@ package dumpImpl
                 return
             else if node->kind.asStringRef == "VarDecl"
                 dumpVarDecl(os, node)
-
             else if node->kind.asStringRef == "StructDecl"
                dumpStructDecl(os, node)
-
             else if node->kind.asStringRef == "FunDecl"
                 dumpFunDecl(os, node)
-
             else if node->kind.asStringRef == "Typedef"
                 dumpTypedef(os, node)
+            else if node->kind.asStringRef == "EnumDecl"
+                dumpEnumDecl(os, node)
+
+        fun dumpEnumDecl(os: @OutStream, node: NodePtr)
+            printSpaces(os)
+            os << endl
+            os << "using " << node->name << " = Int" <<  endl
+            
+            // TODO - If enum list is empty
+            var value = 0
+            for c : NodePtr = node->children.at(0)->children.all()
+                printSpaces(os)
+                os << "using " << c->name  << " = " << value
+                value += 1
+                os << endl
+
+            os << endl
 
         fun dumpTypedef(os: @OutStream, node: NodePtr)
             os << "using " << node->name << " = " 
@@ -92,40 +106,47 @@ package dumpImpl
         fun dumpFunDecl(os: @OutStream, node: NodePtr)
             os << endl
             os << "[native(\"" << node->name << "\")]" << endl
-            os << "fun " << node->name << "("
-            dumpFuncParams(os, node->children.at(2))
-            os << ")"
+            os << "fun " << node->name 
+
+            if node->children.at(2) isSet
+                os << "("
+                dumpFuncParams(os, node->children.at(2))
+                os << ")"
+                
             if node->children.at(0)->name.asStringRef != "Void"
                 os << ": "
                 dumpType(os, node->children.at(0))
             os << endl
 
         fun dumpType(os: @OutStream, node: NodePtr)
-            var type: String
-            var type_end: String
-            while true
-                if node isNull
-                    break
-                else if node->kind.asStringRef == "PtrType"
-                    type += "Ptr("
-                    type_end += ")"
-                else if node->kind.asStringRef == "ArrayType"
-                    type += "StaticArray("
-                    type_end += ")"
-                else if node->kind.asStringRef == "PrimitiveType"
-                    if node->name.asStringRef == "Void"
-                        type += "Byte"
-                    else
-                        type += node->name
+            if node isNull
+                // Do Nothing
+            else if node->kind.asStringRef == "PtrType"
+                os << "Ptr("
+                dumpType(os, node->children.at(0))
+                os << ")"
+            else if node->kind.asStringRef == "ArrayType"
+                os << "StaticArray("
+                dumpType(os, node->children.at(0))
+                os << ", "
+                dumpExpr(os, node->children.at(2))
+                //os << node->children.at(2)->name
+                os << ")"
+            else if node->kind.asStringRef == "PrimitiveType"
+                if node->name.asStringRef == "Void"
+                    os << "Byte"
                 else
-                    type += node->name
+                    os << node->name
+            else
+                os << node->name
+                dumpType(os, node->children.at(0))
 
-                node = node->children.at(0)
-
-            os << type + type_end
 
         fun dumpFuncParams(os: @OutStream, node: NodePtr)
             var first = true
+            if node->children.size() == 0
+                return
+
             for param : NodePtr = node->children.all()
                 if first ; first = false
                 else os <<", "

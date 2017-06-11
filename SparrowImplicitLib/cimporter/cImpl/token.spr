@@ -114,6 +114,8 @@ using tkXOR              = 89
 using tkOR               = 90
 using tkQMARK            = 91
 
+using tkINLINE           = 100
+
 using tkCHAR_LITERAL     = 200
 using tkINT_LITERAL      = 201
 using tkUINT_LITERAL     = 202
@@ -208,6 +210,8 @@ fun token_asString(t: TokenType): String
     else if t == tkCONTINUE         return "'continue'"
     else if t == tkBREAK            return "'break'"
     else if t == tkRETURN           return "'return'"
+
+    else if t == tkINLINE           return "'inline'"
 
     else if t == tkSEMICOLON        return "';'"
     else if t == tkLCURLY           return "'{'"

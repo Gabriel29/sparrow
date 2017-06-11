@@ -135,6 +135,11 @@ namespace
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Compiler
     //
+    bool ctApi_Compiler_registerFrontendFun2(StringRef ext, StringRef funName)
+    {
+        int kind = SprFe_registerUserDefinedSourceCode2(ext.begin, funName.begin);
+        return kind >= 0;
+    }
     bool ctApi_Compiler_registerFrontendFun(StringRef ext, StringRef funName)
     {
         int kind = SprFe_registerUserDefinedSourceCode(ext.begin, funName.begin);
@@ -193,6 +198,7 @@ void SprFrontend::registerCtApiFunctions(Backend* backend)
     backend->ctApiRegisterFun(backend, "$meta.Sparrow.mkReturnStmt",          (void*) &ctApi_Sparrow_mkReturnStmt);
 
     backend->ctApiRegisterFun(backend, "$meta.Compiler.registerFrontendFun",  (void*) &ctApi_Compiler_registerFrontendFun);
+    backend->ctApiRegisterFun(backend, "$meta.Compiler.registerFrontendFun2", (void*) &ctApi_Compiler_registerFrontendFun2);
     backend->ctApiRegisterFun(backend, "$meta.Compiler.parseSprExpression",   (void*) &ctApi_Compiler_parseSprExpression);
 }
 

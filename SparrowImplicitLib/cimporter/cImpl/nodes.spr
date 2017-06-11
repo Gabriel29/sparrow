@@ -33,20 +33,20 @@ class Node
     fun ctor(l: Location, kind: StringRef)
         this.kind ctor kind
         this.loc ctor l
-        cout << "Parsed: " << kind << endl
+        //cout << "Parsed: " << kind << endl
         
     fun ctor(l: Location, kind: StringRef, r: Range)
         this.kind ctor kind
         this.loc ctor l
         children ctor r
-        cout << "Parsed: " << kind << endl
+        //cout << "Parsed: " << kind << endl
 
     fun ctor(l: Location, kind: StringRef, r: Range, name: StringRef)
         this.kind ctor kind
         this.loc ctor l
         this.name ctor name
         children ctor r
-        cout << "Parsed: " << kind << " " << name << endl
+        //cout << "Parsed: " << kind << " " << name << endl
 
 [rtct]
     fun createNode(l: Location, kind: StringRef): NodePtr = new(Node, l, kind)
@@ -55,8 +55,8 @@ class Node
 
     fun mkType(loc: @Location, declType, type: StringRef, modifier: NodePtr) \
         = createNode(loc, declType, OneNodeRange(modifier), type)
-    fun mkArrayType(loc: @Location, node, size: NodePtr) \
-        = createNode(loc, "ArrayType", values(node, size))
+    fun mkArrayType(loc: @Location, type, qual, size: NodePtr) \
+        = createNode(loc, "ArrayType", values(type, qual, size))
     fun mkPtrType(loc: @Location, node, storage: NodePtr) \
         = createNode(loc, "PtrType", values(node, storage))
     fun mkFunDecl(loc: @Location, name: StringRef, retType, storage, params, body: NodePtr) \
@@ -102,8 +102,19 @@ class Node
     fun mkStringLiteral(loc: @Location, data: StringRef) \
         = createNode(loc, "StringLiteral", OneNodeRange(mkIdentifier(loc, data)))
 
-    fun mkEmpty(loc: @Location) \
-        = createNode(loc, "Empty")
+    fun mkIfStmt(loc: @Location, expr, thenClause, elseClause: NodePtr) \
+        = createNode(loc, "IfStmt", values(expr, thenClause, elseClause))
+    fun mkWhileStmt(loc: @Location, expr, body: NodePtr) \
+        = createNode(loc, "WhileStmt", values(expr, body))
+    fun mkDoWhileStmt(loc: @Location, expr, body: NodePtr) \
+        = createNode(loc, "DoWhileStmt", values(expr, body))
+    fun mkBreakStmt(loc: @Location) \
+        = createNode(loc, "BreakStmt");
+    fun mkContinueStmt(loc: @Location) \
+        = createNode(loc, "ContinueStmt");
+    fun mkReturnStmt(loc: @Location, expr: NodePtr) \
+        = createNode(loc, "ReturnStmt", OneNodeRange(expr));
+
 
     fun addToNodeList(nl, newNode: NodePtr): NodePtr
         if nl isNull

@@ -2,4 +2,4 @@ import cimporter
 import meta.compiler
 
 [ct]
-var dummyC1 = registerFrontendFun(".h", "cimporter/cimporter.spr:handleCCode")
+var dummyC1 = registerFrontendFun2(".h", "cimporter/cimporter.spr:handleCCode")

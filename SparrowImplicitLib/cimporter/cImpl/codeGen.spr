@@ -23,33 +23,91 @@ package Impl
         resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std/ptr.spr"), nullNode, "")
         resNodes += meta.mkImportName(loc, meta.mkStringLiteral(loc, "std/staticArray.spr"), nullNode, "")
 
+        // Workaroud for size_t
+        //resNodes += meta.mkSprUsing(loc, "size_t", meta.mkIdentifier(loc, "UInt"))
+        
         if rootNode isSet
             for node: NodePtr = rootNode->children.all()
-                resNodes += genExtDecl(node)
+                genExtDecl(node, resNodes)
+
         return meta.mkNodeList(loc, resNodes.all)
 
     [ct]
-    fun genExtDecl(node: NodePtr): meta.AstNode
+    fun genExtDecl(node: NodePtr, resNodes: @Vector(meta.AstNode))//: meta.AstNode
         if node->kind == "VarDecl"
-            cout << "Generating VarDecl" << endl
-            return genVarDecl(node)
+            cout << "Generating VarDecl " << node->name << endl
+            resNodes += genVarDecl(node)
         else if node->kind == "FunDecl"
-            cout << "Generating FunDecl" << endl
-            return genFunDecl(node)
+            cout << "Generating FunDecl " << node->name << endl
+            resNodes += genFunDecl(node)
         else if node->kind == "StructDecl"
-            cout << "Generating StructDecl" << endl
-            return genStructDecl(node)
+            cout << "Generating StructDecl " << node->name << endl
+            resNodes += genStructDecl(node)
+        else if node->kind == "EnumDecl"
+            cout << "Generating EnumDecl " << node->name << endl
+            genEnumDecl(node, resNodes)
         else if node->kind == "Typedef"
-            cout << "Generating Typedef" << endl
-            return genTypedef(node)
+            cout << "Generating Typedef " << node->name << endl
+            genTypedef(node, resNodes)
 
     [ct]
-    fun genTypedef(node: NodePtr): meta.AstNode
+    fun isPrimExpr(node: NodePtr): Bool
+        if (  (node->kind.asStringRef == "IntLiteral")
+           || (node->kind.asStringRef == "UIntLiteral")
+           || (node->kind.asStringRef == "LongLiteral")
+           || (node->kind.asStringRef == "ULongLiteral")
+           || (node->kind.asStringRef == "FloatLiteral")
+           || (node->kind.asStringRef == "DoubleLiteral")
+           || (node->kind.asStringRef == "CharLiteral")
+           || (node->kind.asStringRef == "StringLiteral")
+           )
+           return true
+        return false
+
+    [ct]
+    fun getPrimExpr(node: NodePtr): meta.AstNode
+        var lit = node->children.at(0)->kind.asStringRef
+
+        if (node->kind.asStringRef == "IntLiteral")
+            return meta.mkIntLiteral(node->loc, Int(asInt(lit)))
+        if (node->kind.asStringRef == "UIntLiteral")
+            return meta.mkUIntLiteral(node->loc, UInt(asInt(lit)))
+        if (node->kind.asStringRef == "LongLiteral")
+            return meta.mkLongLiteral(node->loc, Long(asLong(lit)))
+        if (node->kind.asStringRef == "ULongLiteral")
+            return meta.mkULongLiteral(node->loc, ULong(asLong(lit)))
+        if (node->kind.asStringRef == "FloatLiteral")
+            return meta.mkFloatLiteral(node->loc, Float(asDouble(lit)))
+        if (node->kind.asStringRef == "DoubleLiteral")
+            return meta.mkDoubleLiteral(node->loc, Double(asDouble(lit)))
+        if (node->kind.asStringRef == "CharLiteral")
+            return meta.mkCharLiteral(node->loc, node->kind(0))
+        if (node->kind.asStringRef == "StringLiteral")
+            return meta.mkStringLiteral(node->loc, node->kind.asStringRef)
+
+    [ct]
+    fun genExpr(node: NodePtr): meta.AstNode
+        if node isPrimExpr
+            return getPrimExpr(node)
+            //return meta.mkIdentifier(node->children.at(0)->loc, node->children.at(0)->kind asStringRef)
+
+        else if node->kind.asStringRef == "BinOper"
+            var expr1, expr2: meta.AstNode
+            var op = node->name asStringRef
+            expr1 = genExpr(node->children.at(0))
+            expr2 = genExpr(node->children.at(1))
+            return meta.mkInfixOp(node->loc, op, expr1, expr2)
+
+    [ct]
+    fun genTypedef(node: NodePtr, resNodes: @Vector(meta.AstNode))//: meta.AstNode
         var usingDecl: meta.AstNode
         var type = genType(node->children.at(0))
-        usingDecl = meta.mkSprUsing(node->loc, node->name.asStringRef, type)
 
-        return usingDecl
+        // Change verif method for 'using name = name'
+        if node->children.at(0)->name != node->name
+            usingDecl = meta.mkSprUsing(node->loc, node->name.asStringRef, type)
+            resNodes+= usingDecl
+
 
     [ct]
     fun genVarDecl(node: NodePtr): meta.AstNode
@@ -66,7 +124,16 @@ package Impl
 
         if node->kind.asStringRef == "PtrType"
             return meta.mkOperatorCall(node->loc, genType(node->children.at(0)), "Ptr", nullNode)
-        //else if node->kind.asStringRef == "ArrayType"
+        
+        else if node->kind.asStringRef == "ArrayType"
+            var args: meta.AstNode
+            var func = meta.mkIdentifier(node->loc, "StaticArray")
+
+            args = addToNodeList(args, genType(node->children.at(0)))
+            args = addToNodeList(args, genExpr(node->children.at(2)))
+            //return meta.mkFunApplication(node->loc, func, args)
+            return meta.mkInfixOp(node->loc, "__fapp__", func, args)
+        
         else if node->kind.asStringRef == "PrimitiveType"
             if node->name.asStringRef == "Void"
                 return meta.mkIdentifier(node->loc, "Byte")
@@ -77,28 +144,34 @@ package Impl
     fun genFunDecl(node: NodePtr): meta.AstNode
         var loc = node->loc
         var name = node->name asStringRef
-        var paramsNode = genFuncParams(node->children.at(2))
+        var paramsNode = nullNode
         var body = nullNode
         var retType = nullNode
+
+        if node->children.at(2) isSet
+            paramsNode = genFuncParams(node->children.at(2))
+
         if node->children.at(0)->name.asStringRef != "Void"
             retType = genType(node->children.at(0))
 
         var funDecl = meta.mkSprFunction(loc, name, paramsNode, retType, body, nullNode);
         
         // TODO - native modifier
-        /* var mods = meta.mkNodeList(loc, meta.AstNodeRange(), true)
-        var native = meta.mkFunApplication(loc, 
+        var mods = meta.mkNodeList(loc, meta.AstNodeRange(), true)
+        var native = meta.mkInfixOp(loc, "__fapp__",
             meta.mkIdentifier(loc, "native"), 
             addToNodeList(meta.AstNode(), meta.mkStringLiteral(loc, name))
             )
+
         mods = meta.addToNodeList(mods, native)
-        return meta.mkModifiers(loc, funDecl, mods) */
-        return funDecl
+        return meta.mkModifiers(loc, funDecl, mods)
+
+        //return funDecl
 
     [ct]
     fun genFuncParams(node: NodePtr): meta.AstNode
         if node->children.size() == 0
-            return meta.AstNode()
+            return nullNode
 
         var locParams = node->children.at(0)->loc
         var params : meta.AstNode
@@ -106,6 +179,7 @@ package Impl
             var loc = param->loc
             var name = param->name asStringRef
             var type = genType(param->children.at(0))
+
             params = meta.addToNodeList(params, meta.mkSprParameter(loc, name, type, nullNode))
 
         return params
@@ -124,3 +198,16 @@ package Impl
             vars = meta.addToNodeList(vars, meta.mkSprVariable(loc, name, type, nullNode))
 
         return meta.mkSprClass(loc, name, nullNode, nullNode, nullNode, vars)
+
+    
+    [ct]
+    fun genEnumDecl(node: NodePtr, resNodes: @Vector(meta.AstNode))//: meta.AstNode
+        var type = meta.mkIdentifier(node->loc, "Int")
+        resNodes += meta.mkSprUsing(node->loc, node->name.asStringRef, type)
+        
+        // TODO - If enum list is empty
+        var value = 0
+        for c : NodePtr = node->children.at(0)->children.all()
+            var number = meta.mkIntLiteral(node->loc, value)
+            resNodes += meta.mkSprUsing(c->loc, c->name.asStringRef, number)
+            value += 1

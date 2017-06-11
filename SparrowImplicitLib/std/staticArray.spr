@@ -174,7 +174,7 @@ import ranges;
     fun at(index: SizeType): @ValueType = _asPtr().advance(DiffType(index)).value();
     fun ()(index: SizeType): @ValueType = _asPtr().advance(DiffType(index)).value();
 
-    fun all = RangeType(_asPtr(), _asPtr().advance(DiffType(arraySize)));
+    fun all = RangeType(_asPtr(), _asPtr().advance(DiffType(ctEval(arraySize))));
 
     fun subrange(index: SizeType, num: SizeType) \
         = RangeType(_asPtr().advance(DiffType(index)), _asPtr().advance(DiffType(index + num)));
