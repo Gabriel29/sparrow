@@ -3,7 +3,7 @@ module std.union
 import std.staticArray
 
 [ct]
-fun maxSize(value1, value2: SizeType): SizeType
+fun _maxSize(value1, value2: SizeType): SizeType
     if value1 < value2
         return value2
     return value1
@@ -17,7 +17,7 @@ package _Impl1
 
 package _Impl2
     datatype Union2(t1, t2: Type)
-        data: StaticArray(Char, maxSize(sizeOf(t1),sizeOf(t2)))
+        data: StaticArray(Char, _maxSize(sizeOf(t1),sizeOf(t2)))
         using Type1 = t1
         using Type2 = t2
 
@@ -26,10 +26,10 @@ package _Impl2
 
 package _Impl3
     datatype Union3(t1, t2, t3: Type)
-        data: StaticArray(Char, 
-            maxSize(
-                sizeOf(t3),
-                maxSize(sizeOf(t1),sizeOf(t2))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t3), \
+                _maxSize(sizeOf(t1),sizeOf(t2))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -40,12 +40,12 @@ package _Impl3
 
 package _Impl4
     datatype Union4(t1, t2, t3, t4: Type)
-        data: StaticArray(Char, 
-            maxSize(
-                sizeOf(t4),
-                maxSize(
-                    sizeOf(t3),
-                    maxSize(sizeOf(t1),sizeOf(t2)))))
+        data: StaticArray(Char,  \
+            _maxSize( \
+                sizeOf(t4), \
+                _maxSize( \
+                    sizeOf(t3), \
+                    _maxSize(sizeOf(t1),sizeOf(t2)))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -58,14 +58,14 @@ package _Impl4
 
 package _Impl5
     datatype Union5(t1, t2, t3, t4, t5: Type)
-        data: StaticArray(Char, 
-            maxSize(
-                sizeOf(t5),
-                maxSize(
-                    sizeOf(t4),
-                    maxSize(
-                        sizeOf(t3),
-                        maxSize(sizeOf(t1),sizeOf(t2))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t5), \
+                _maxSize( \
+                    sizeOf(t4), \
+                    _maxSize( \
+                        sizeOf(t3), \
+                        _maxSize(sizeOf(t1),sizeOf(t2))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -80,16 +80,16 @@ package _Impl5
 
 package _Impl6
     datatype Union6(t1, t2, t3, t4, t5, t6: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t6),
-                maxSize(
-                    sizeOf(t5),
-                    maxSize(
-                        sizeOf(t4),
-                        maxSize(
-                            sizeOf(t3),
-                            maxSize(sizeOf(t1),sizeOf(t2)))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t6), \
+                _maxSize( \
+                    sizeOf(t5), \
+                    _maxSize( \
+                        sizeOf(t4), \
+                        _maxSize( \
+                            sizeOf(t3), \
+                            _maxSize(sizeOf(t1),sizeOf(t2)))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -106,18 +106,18 @@ package _Impl6
 
 package _Impl7
     datatype Union7(t1, t2, t3, t4, t5, t6, t7: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t7),
-                maxSize(
-                    sizeOf(t6),
-                    maxSize(
-                        sizeOf(t5),
-                        maxSize(
-                            sizeOf(t4),
-                            maxSize(
-                                sizeOf(t3),
-                                maxSize(sizeOf(t1),sizeOf(t2))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t7), \
+                _maxSize( \
+                    sizeOf(t6), \
+                    _maxSize( \
+                        sizeOf(t5), \
+                        _maxSize( \
+                            sizeOf(t4), \
+                            _maxSize( \
+                                sizeOf(t3), \
+                                _maxSize(sizeOf(t1),sizeOf(t2))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -136,20 +136,20 @@ package _Impl7
 
 package _Impl8
     datatype Union8(t1, t2, t3, t4, t5, t6, t7, t8: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t8),
-                maxSize(
-                    sizeOf(t7),
-                    maxSize(
-                        sizeOf(t6),
-                        maxSize(
-                            sizeOf(t5),
-                            maxSize(
-                                sizeOf(t4),
-                                maxSize(
-                                    sizeOf(t3),
-                                    maxSize(sizeOf(t1),sizeOf(t2)))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t8), \
+                _maxSize( \
+                    sizeOf(t7), \
+                    _maxSize( \
+                        sizeOf(t6), \
+                        _maxSize( \
+                            sizeOf(t5), \
+                            _maxSize( \
+                                sizeOf(t4), \
+                                _maxSize( \
+                                    sizeOf(t3), \
+                                    _maxSize(sizeOf(t1),sizeOf(t2)))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -170,22 +170,22 @@ package _Impl8
 
 package _Impl9
     datatype Union9(t1, t2, t3, t4, t5, t6, t7, t8, t9: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t9),
-                maxSize(
-                    sizeOf(t8),
-                    maxSize(
-                        sizeOf(t7),
-                        maxSize(
-                            sizeOf(t6),
-                            maxSize(
-                                sizeOf(t5),
-                                maxSize(
-                                    sizeOf(t4),
-                                    maxSize(
-                                        sizeOf(t3),
-                                        maxSize(sizeOf(t1),sizeOf(t2))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t9), \
+                _maxSize( \
+                    sizeOf(t8), \
+                    _maxSize( \
+                        sizeOf(t7), \
+                        _maxSize( \
+                            sizeOf(t6), \
+                            _maxSize( \
+                                sizeOf(t5), \
+                                _maxSize( \
+                                    sizeOf(t4), \
+                                    _maxSize( \
+                                        sizeOf(t3), \
+                                        _maxSize(sizeOf(t1),sizeOf(t2))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -208,24 +208,24 @@ package _Impl9
 
 package _Impl10
     datatype Union10(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t10),
-                maxSize(
-                    sizeOf(t9),
-                    maxSize(
-                        sizeOf(t8),
-                        maxSize(
-                            sizeOf(t7),
-                            maxSize(
-                                sizeOf(t6),
-                                maxSize(
-                                    sizeOf(t5),
-                                    maxSize(
-                                        sizeOf(t4),
-                                        maxSize(
-                                            sizeOf(t3),
-                                            maxSize(sizeOf(t1),sizeOf(t2)))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t10), \
+                _maxSize( \
+                    sizeOf(t9), \
+                    _maxSize( \
+                        sizeOf(t8), \
+                        _maxSize( \
+                            sizeOf(t7), \
+                            _maxSize( \
+                                sizeOf(t6), \
+                                _maxSize( \
+                                    sizeOf(t5), \
+                                    _maxSize( \
+                                        sizeOf(t4), \
+                                        _maxSize( \
+                                            sizeOf(t3), \
+                                            _maxSize(sizeOf(t1),sizeOf(t2)))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -250,26 +250,26 @@ package _Impl10
 
 package _Impl11
     datatype Union11(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t11),
-                maxSize(
-                    sizeOf(t10),
-                    maxSize(
-                        sizeOf(t9),
-                        maxSize(
-                            sizeOf(t8),
-                            maxSize(
-                                sizeOf(t7),
-                                maxSize(
-                                    sizeOf(t6),
-                                    maxSize(
-                                        sizeOf(t5),
-                                        maxSize(
-                                            sizeOf(t4),
-                                            maxSize(
-                                                sizeOf(t3),
-                                                maxSize(sizeOf(t1),sizeOf(t2))))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t11), \
+                _maxSize( \
+                    sizeOf(t10), \
+                    _maxSize( \
+                        sizeOf(t9), \
+                        _maxSize( \
+                            sizeOf(t8), \
+                            _maxSize( \
+                                sizeOf(t7), \
+                                _maxSize( \
+                                    sizeOf(t6), \
+                                    _maxSize( \
+                                        sizeOf(t5), \
+                                        _maxSize( \
+                                            sizeOf(t4), \
+                                            _maxSize( \
+                                                sizeOf(t3), \
+                                                _maxSize(sizeOf(t1),sizeOf(t2))))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -296,28 +296,28 @@ package _Impl11
 
 package _Impl12
     datatype Union12(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t12),
-                maxSize(
-                    sizeOf(t11),
-                    maxSize(
-                        sizeOf(t10),
-                        maxSize(
-                            sizeOf(t9),
-                            maxSize(
-                                sizeOf(t8),
-                                maxSize(
-                                    sizeOf(t7),
-                                    maxSize(
-                                        sizeOf(t6),
-                                        maxSize(
-                                            sizeOf(t5),
-                                            maxSize(
-                                                sizeOf(t4),
-                                                maxSize(
-                                                    sizeOf(t3),
-                                                    maxSize(sizeOf(t1),sizeOf(t2)))))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t12), \
+                _maxSize( \
+                    sizeOf(t11), \
+                    _maxSize( \
+                        sizeOf(t10), \
+                        _maxSize( \
+                            sizeOf(t9), \
+                            _maxSize( \
+                                sizeOf(t8), \
+                                _maxSize( \
+                                    sizeOf(t7), \
+                                    _maxSize( \
+                                        sizeOf(t6), \
+                                        _maxSize( \
+                                            sizeOf(t5), \
+                                            _maxSize( \
+                                                sizeOf(t4), \
+                                                _maxSize( \
+                                                    sizeOf(t3), \
+                                                    _maxSize(sizeOf(t1),sizeOf(t2)))))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -346,30 +346,30 @@ package _Impl12
 
 package _Impl13
     datatype Union13(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t13),
-                maxSize(
-                    sizeOf(t12),
-                    maxSize(
-                        sizeOf(t11),
-                        maxSize(
-                            sizeOf(t10),
-                            maxSize(
-                                sizeOf(t9),
-                                maxSize(
-                                    sizeOf(t8),
-                                    maxSize(
-                                        sizeOf(t7),
-                                        maxSize(
-                                            sizeOf(t6),
-                                            maxSize(
-                                                sizeOf(t5),
-                                                maxSize(
-                                                    sizeOf(t4),
-                                                    maxSize(
-                                                        sizeOf(t3),
-                                                        maxSize(sizeOf(t1),sizeOf(t2))))))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t13), \
+                _maxSize( \
+                    sizeOf(t12), \
+                    _maxSize( \
+                        sizeOf(t11), \
+                        _maxSize( \
+                            sizeOf(t10), \
+                            _maxSize( \
+                                sizeOf(t9), \
+                                _maxSize( \
+                                    sizeOf(t8), \
+                                    _maxSize( \
+                                        sizeOf(t7), \
+                                        _maxSize( \
+                                            sizeOf(t6), \
+                                            _maxSize( \
+                                                sizeOf(t5), \
+                                                _maxSize( \
+                                                    sizeOf(t4), \
+                                                    _maxSize( \
+                                                        sizeOf(t3), \
+                                                        _maxSize(sizeOf(t1),sizeOf(t2))))))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -400,32 +400,32 @@ package _Impl13
 
 package _Impl14
     datatype Union14(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t14),
-                maxSize(
-                    sizeOf(t13),
-                    maxSize(
-                        sizeOf(t12),
-                        maxSize(
-                            sizeOf(t11),
-                            maxSize(
-                                sizeOf(t10),
-                                maxSize(
-                                    sizeOf(t9),
-                                    maxSize(
-                                        sizeOf(t8),
-                                        maxSize(
-                                            sizeOf(t7),
-                                            maxSize(
-                                                sizeOf(t6),
-                                                maxSize(
-                                                    sizeOf(t5),
-                                                    maxSize(
-                                                        sizeOf(t4),
-                                                        maxSize(
-                                                            sizeOf(t3),
-                                                            maxSize(sizeOf(t1),sizeOf(t2)))))))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t14), \
+                _maxSize( \
+                    sizeOf(t13), \
+                    _maxSize( \
+                        sizeOf(t12), \
+                        _maxSize( \
+                            sizeOf(t11), \
+                            _maxSize( \
+                                sizeOf(t10), \
+                                _maxSize( \
+                                    sizeOf(t9), \
+                                    _maxSize( \
+                                        sizeOf(t8), \
+                                        _maxSize( \
+                                            sizeOf(t7), \
+                                            _maxSize( \
+                                                sizeOf(t6), \
+                                                _maxSize( \
+                                                    sizeOf(t5), \
+                                                    _maxSize( \
+                                                        sizeOf(t4), \
+                                                        _maxSize( \
+                                                            sizeOf(t3), \
+                                                            _maxSize(sizeOf(t1),sizeOf(t2)))))))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -458,34 +458,34 @@ package _Impl14
 
 package _Impl15
     datatype Union15(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t15),
-                maxSize(
-                    sizeOf(t14),
-                    maxSize(
-                        sizeOf(t13),
-                        maxSize(
-                            sizeOf(t12),
-                            maxSize(
-                                sizeOf(t11),
-                                maxSize(
-                                    sizeOf(t10),
-                                    maxSize(
-                                        sizeOf(t9),
-                                        maxSize(
-                                            sizeOf(t8),
-                                            maxSize(
-                                                sizeOf(t7),
-                                                maxSize(
-                                                    sizeOf(t6),
-                                                    maxSize(
-                                                        sizeOf(t5),
-                                                        maxSize(
-                                                            sizeOf(t4),
-                                                            maxSize(
-                                                                sizeOf(t3),
-                                                                maxSize(sizeOf(t1),sizeOf(t2))))))))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t15), \
+                _maxSize( \
+                    sizeOf(t14), \
+                    _maxSize( \
+                        sizeOf(t13), \
+                        _maxSize( \
+                            sizeOf(t12), \
+                            _maxSize( \
+                                sizeOf(t11), \
+                                _maxSize( \
+                                    sizeOf(t10), \
+                                    _maxSize( \
+                                        sizeOf(t9), \
+                                        _maxSize( \
+                                            sizeOf(t8), \
+                                            _maxSize( \
+                                                sizeOf(t7), \
+                                                _maxSize( \
+                                                    sizeOf(t6), \
+                                                    _maxSize( \
+                                                        sizeOf(t5), \
+                                                        _maxSize( \
+                                                            sizeOf(t4), \
+                                                            _maxSize( \
+                                                                sizeOf(t3), \
+                                                                _maxSize(sizeOf(t1),sizeOf(t2))))))))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
@@ -520,36 +520,36 @@ package _Impl15
 
 package _Impl16
     datatype Union16(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16: Type)
-        data: StaticArray(Char,
-            maxSize(
-                sizeOf(t16),
-                maxSize(
-                    sizeOf(t15),
-                    maxSize(
-                        sizeOf(t14),
-                        maxSize(
-                            sizeOf(t13),
-                            maxSize(
-                                sizeOf(t12),
-                                maxSize(
-                                    sizeOf(t11),
-                                    maxSize(
-                                        sizeOf(t10),
-                                        maxSize(
-                                            sizeOf(t9),
-                                            maxSize(
-                                                sizeOf(t8),
-                                                maxSize(
-                                                    sizeOf(t7),
-                                                    maxSize(
-                                                        sizeOf(t6),
-                                                        maxSize(
-                                                            sizeOf(t5),
-                                                            maxSize(
-                                                                sizeOf(t4),
-                                                                maxSize(
-                                                                    sizeOf(t3),
-                                                                    maxSize(sizeOf(t1),sizeOf(t2)))))))))))))))))
+        data: StaticArray(Char, \
+            _maxSize( \
+                sizeOf(t16), \
+                _maxSize( \
+                    sizeOf(t15), \
+                    _maxSize( \
+                        sizeOf(t14), \
+                        _maxSize( \
+                            sizeOf(t13), \
+                            _maxSize( \
+                                sizeOf(t12), \
+                                _maxSize( \
+                                    sizeOf(t11), \
+                                    _maxSize( \
+                                        sizeOf(t10), \
+                                        _maxSize( \
+                                            sizeOf(t9), \
+                                            _maxSize( \
+                                                sizeOf(t8), \
+                                                _maxSize( \
+                                                    sizeOf(t7), \
+                                                    _maxSize( \
+                                                        sizeOf(t6), \
+                                                        _maxSize( \
+                                                            sizeOf(t5), \
+                                                            _maxSize( \
+                                                                sizeOf(t4), \
+                                                                _maxSize( \
+                                                                    sizeOf(t3), \
+                                                                    _maxSize(sizeOf(t1),sizeOf(t2)))))))))))))))))
         using Type1 = t1
         using Type2 = t2
         using Type3 = t3
